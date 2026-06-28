@@ -23,9 +23,10 @@ func _ready() -> void:
 	v.add_child(title)
 	v.add_child(_label("영혼을 엮는 자", 24, Color(0.65, 0.62, 0.78)))
 	var sp := Control.new(); sp.custom_minimum_size = Vector2(0, 24); v.add_child(sp)
-	# 시작 버튼(아직 동작 없음 — 골격)
+	# 시작 버튼 — 첫 전투로
 	var play := Button.new()
 	play.text = "시작"
+	play.pressed.connect(func(): get_tree().change_scene_to_file("res://scenes/battle/battle.tscn"))
 	play.custom_minimum_size = Vector2(280, 60)
 	play.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	play.add_theme_font_override("font", FONT)
