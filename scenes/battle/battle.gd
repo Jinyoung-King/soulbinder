@@ -21,6 +21,7 @@ enum Phase { SELECT_ACTOR, SELECT_ACTION, SELECT_TARGET, ENEMY, COLLECT, RESULT 
 const SELECT_ACCENT := Color(0.7, 0.55, 1.0)  # 선택 가능 카드 강조(영혼 보라)
 
 var allies: Array[Combatant] = []
+var ally_src: Array[int] = []         # allies[i] ↔ roster 인덱스(레벨업 반영용)
 var enemies: Array[Combatant] = []
 var pending: Array[Combatant] = []   # 이번 라운드 아직 행동 안 한 아군
 var phase: int = Phase.SELECT_ACTOR
@@ -95,10 +96,17 @@ func _ready() -> void:
 
 # ── 전투 시작/라운드 ─────────────────────────────────────────────
 func _start_battle() -> void:
-	# 파티 = 로스터 앞 3인(레벨 반영). 팀빌더는 다음 슬라이스.
+	# 파티 = 편성된 출전 팀(레벨 반영). 비어 있으면 앞 3인으로 폴백.
 	allies = []
-	for i in mini(3, GameState.roster.size()):
-		allies.append(_ally(GameState.roster[i]))
+	ally_src = []
+	var team := GameState.party.duplicate()
+	if team.is_empty():
+		for i in mini(GameState.PARTY_MAX, GameState.roster.size()):
+			team.append(i)
+	for idx in team:
+		if idx >= 0 and idx < GameState.roster.size():
+			allies.append(_ally(GameState.roster[idx]))
+			ally_src.append(idx)
 	# 적 = 거둘 수 있는 쓰러진 영혼(직업·사연 보유)
 	enemies = [
 		_enemy_soul("부패한 근위병", Jobs.KNIGHT, "성문이 부서지던 순간까지 창을 거두지 않았다."),
@@ -276,9 +284,10 @@ func _end_battle(won: bool) -> void:
 func _apply_levelups() -> void:
 	var ups: Array[String] = []
 	for i in allies.size():
-		if allies[i].alive() and i < GameState.roster.size():
-			GameState.roster[i].level += 1
-			ups.append("%s Lv%d" % [GameState.roster[i].name, GameState.roster[i].level])
+		if allies[i].alive() and i < ally_src.size():
+			var ri := ally_src[i]
+			GameState.roster[ri].level += 1
+			ups.append("%s Lv%d" % [GameState.roster[ri].name, GameState.roster[ri].level])
 	if not ups.is_empty():
 		_log("레벨업 ▸ " + ", ".join(ups))
 
@@ -363,6 +372,8 @@ func _refresh() -> void:
 			prompt_label.text = "전투 종료 — " + ("승리" if won else "패배")
 			var first := "다음 전투" if won else "다시 전투"
 			_add_action_btn(first, Color(0.6, 0.45, 0.95), func(): _start_battle())
+			if won:
+				_add_action_btn("팀 편성", Color(0.5, 0.62, 0.95), func(): get_tree().change_scene_to_file("res://scenes/ui/party.tscn"))
 			_add_action_btn("타이틀로", Color(0.5, 0.5, 0.58), func(): get_tree().change_scene_to_file("res://scenes/ui/title.tscn"))
 
 func _set_banner() -> void:

@@ -34,6 +34,16 @@ func _ready() -> void:
 	play.add_theme_font_size_override("font_size", 28)
 	UIKit.style_button(play, Color(0.6, 0.45, 0.95))
 	v.add_child(play)
+	# 영혼 편성 버튼
+	var party := Button.new()
+	party.text = "영혼 편성"
+	party.pressed.connect(func(): get_tree().change_scene_to_file("res://scenes/ui/party.tscn"))
+	party.custom_minimum_size = Vector2(280, 50)
+	party.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	party.add_theme_font_override("font", FONT)
+	party.add_theme_font_size_override("font_size", 22)
+	UIKit.style_button(party, Color(0.5, 0.62, 0.95))
+	v.add_child(party)
 	# 버전(우하단)
 	var ver := _label(GameState.VERSION, 16, Color(0.5, 0.5, 0.6))
 	ver.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_RIGHT, Control.PRESET_MODE_KEEP_SIZE)
