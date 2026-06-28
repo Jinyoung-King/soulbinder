@@ -12,6 +12,8 @@ const KNIGHT_TAUNT := 2     # 도발 지속 턴
 const PLAGUE_VULN := 2      # 역병의 표식 취약 턴
 const PLAGUE_DMG := 4       # 표식의 소량 피해
 const HEADSMAN_DMG := 16    # 단두 기본 피해(취약 대상엔 ×2). 표식+단두 콤보로 잡몹 1사이클 처치
+const BERSERK_DMG := 11     # 광란: 모든 적에게 입히는 피해(취약 시 ×1.5 적용)
+const BERSERK_RECOIL := 5   # 광란 자해 반동
 
 const FX_HIT := 0.55        # 피격 연출 길이
 const STEP := 0.45          # 적 행동 사이 텀(하나씩 보이게)
@@ -109,8 +111,9 @@ func _start_battle() -> void:
 			ally_src.append(idx)
 	# 적 = 거둘 수 있는 쓰러진 영혼(직업·사연 보유)
 	enemies = [
-		_enemy_soul("부패한 근위병", Jobs.KNIGHT, "성문이 부서지던 순간까지 창을 거두지 않았다."),
-		_enemy_soul("역병 운반자", Jobs.PLAGUE, "도망치다 쓰러진 자리에서 역병을 퍼뜨렸다."),
+		_enemy_soul("부패한 근위병", Jobs.KNIGHT, "성문이 부서지던 순간까지 창을 거두지 않았다.", 38, 7),
+		_enemy_soul("역병 운반자", Jobs.PLAGUE, "도망치다 쓰러진 자리에서 역병을 퍼뜨렸다.", 30, 6),
+		_enemy_soul("피에 굶주린 광인", Jobs.BERSERKER, "복수를 외치다 제 편마저 베고 미쳐 버린 검사.", 44, 8),
 	]
 	round_no = 1
 	busy = false
@@ -126,8 +129,8 @@ func _ally(entry: Dictionary) -> Combatant:
 	var lvl := int(entry.level)
 	return Combatant.new(entry.name, entry.job, d.color, d.hp + (lvl - 1) * 5, d.atk + (lvl - 1), false)
 
-func _enemy_soul(p_name: String, job: String, lore: String) -> Combatant:
-	var c := Combatant.new(p_name, job, Color(0.55, 0.55, 0.6), 35, 7, true)
+func _enemy_soul(p_name: String, job: String, lore: String, hp: int, atk: int) -> Combatant:
+	var c := Combatant.new(p_name, job, Color(0.55, 0.55, 0.6), hp, atk, true)
 	c.lore = lore
 	return c
 
@@ -210,6 +213,16 @@ func _resolve_skill(target: Combatant) -> void:
 			var tag := " 치명타!" if crit else ""
 			_log("%s ▸ 단두!%s %s에 %d 피해%s" % [actor.display_name, tag, target.display_name, dealt, _kill(target)])
 			await _hit(target, ("-%d 치명!" % dealt) if crit else "-%d" % dealt, Color(1, 0.85, 0.3) if crit else Color(1, 0.5, 0.45), crit)
+		Jobs.BERSERKER:
+			var hits: Array[String] = []
+			for e in enemies:
+				if e.alive():
+					var dd := e.take_damage(BERSERK_DMG)
+					hits.append("%s %d%s" % [e.display_name, dd, _kill(e)])
+					await _hit(e, "-%d" % dd, Color(1, 0.55, 0.25), false)
+			actor.take_damage(BERSERK_RECOIL, false)  # 자해 반동(취약 무관)
+			_log("%s ▸ 광란! 적 전체 — %s | 반동 %d" % [actor.display_name, ", ".join(hits), BERSERK_RECOIL])
+			await _hit(actor, "반동 -%d" % BERSERK_RECOIL, Color(0.9, 0.5, 0.5), false)
 		_:
 			pass
 

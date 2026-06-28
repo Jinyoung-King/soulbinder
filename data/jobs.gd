@@ -7,6 +7,7 @@ extends RefCounted
 const KNIGHT := "knight"      # 기사 — 맞아주는 탱. 도발+보호막
 const PLAGUE := "plague"      # 독술사 — 취약 표식을 거는 셋업
 const HEADSMAN := "headsman"  # 처형인 — 취약 대상에 치명타(피니셔)
+const BERSERKER := "berserker"  # 광전사 — 광역 청소(자해 반동). 단일 폭딜과의 조합 갈림
 
 ## 직업별 정의. hp/atk=기본 스탯, skill=고유기술 메타.
 const TABLE := {
@@ -27,6 +28,12 @@ const TABLE := {
 		"hp": 42, "atk": 7,
 		"skill": "단두", "desc": "큰 피해. 취약 대상엔 치명타(피해 2배)",
 		"cd": 2, "needs_target": true,
+	},
+	BERSERKER: {
+		"name": "광전사", "color": Color(0.95, 0.55, 0.2),
+		"hp": 46, "atk": 9,
+		"skill": "광란", "desc": "모든 적에게 피해 + 자신도 반동 피해",
+		"cd": 2, "needs_target": false,
 	},
 }
 
