@@ -27,7 +27,7 @@ func _ready() -> void:
 	# 시작 버튼 — 첫 전투로
 	var play := Button.new()
 	play.text = "시작"
-	play.pressed.connect(func(): get_tree().change_scene_to_file("res://scenes/battle/battle.tscn"))
+	play.pressed.connect(func(): get_tree().change_scene_to_file("res://scenes/ui/prologue.tscn"))
 	play.custom_minimum_size = Vector2(280, 60)
 	play.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	play.add_theme_font_override("font", FONT)
