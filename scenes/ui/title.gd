@@ -22,6 +22,7 @@ func _ready() -> void:
 	title.add_theme_color_override("font_outline_color", Color(0.35, 0.18, 0.5, 0.9))
 	v.add_child(title)
 	v.add_child(_label("영혼을 엮는 자", 24, Color(0.65, 0.62, 0.78)))
+	v.add_child(_label("거둔 영혼 %d" % GameState.roster.size(), 18, Color(0.55, 0.52, 0.66)))
 	var sp := Control.new(); sp.custom_minimum_size = Vector2(0, 24); v.add_child(sp)
 	# 시작 버튼 — 첫 전투로
 	var play := Button.new()

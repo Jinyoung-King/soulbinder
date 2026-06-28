@@ -12,7 +12,9 @@ const PLAGUE_VULN := 2      # 역병의 표식 취약 턴
 const PLAGUE_DMG := 4       # 표식의 소량 피해
 const HEADSMAN_DMG := 16    # 단두 기본 피해(취약 대상엔 ×2). 표식+단두 콤보로 잡몹 1사이클 처치
 
-enum Phase { SELECT_ACTOR, SELECT_ACTION, SELECT_TARGET, RESULT }
+enum Phase { SELECT_ACTOR, SELECT_ACTION, SELECT_TARGET, COLLECT, RESULT }
+
+const SELECT_ACCENT := Color(0.7, 0.55, 1.0)  # 선택 가능 카드 강조(영혼 보라)
 
 var allies: Array[Combatant] = []
 var enemies: Array[Combatant] = []
@@ -78,22 +80,29 @@ func _ready() -> void:
 
 # ── 전투 시작/라운드 ─────────────────────────────────────────────
 func _start_battle() -> void:
-	allies = [
-		_ally(Jobs.KNIGHT),
-		_ally(Jobs.PLAGUE),
-		_ally(Jobs.HEADSMAN),
-	]
+	# 파티 = 로스터 앞 3인(레벨 반영). 팀빌더는 다음 슬라이스.
+	allies = []
+	for i in mini(3, GameState.roster.size()):
+		allies.append(_ally(GameState.roster[i]))
+	# 적 = 거둘 수 있는 쓰러진 영혼(직업·사연 보유)
 	enemies = [
-		Combatant.new("부패한 병사", "enemy", Color(0.55, 0.55, 0.6), 35, 7, true),
-		Combatant.new("부패한 병사", "enemy", Color(0.55, 0.55, 0.6), 35, 7, true),
+		_enemy_soul("부패한 근위병", Jobs.KNIGHT, "성문이 부서지던 순간까지 창을 거두지 않았다."),
+		_enemy_soul("역병 운반자", Jobs.PLAGUE, "도망치다 쓰러진 자리에서 역병을 퍼뜨렸다."),
 	]
 	round_no = 1
-	log_lines = ["멸망한 왕성 변두리. 부패한 병사들이 일어선다…"]
+	log_lines = ["멸망한 왕성 변두리. 쓰러진 자들이 다시 일어선다…"]
 	_start_round()
 
-func _ally(job: String) -> Combatant:
-	var d := Jobs.get_def(job)
-	return Combatant.new(d.name, job, d.color, d.hp, d.atk, false)
+## 로스터 항목 → 전투 유닛(레벨 스케일링: 레벨당 HP+5/공격+1).
+func _ally(entry: Dictionary) -> Combatant:
+	var d := Jobs.get_def(entry.job)
+	var lvl := int(entry.level)
+	return Combatant.new(entry.name, entry.job, d.color, d.hp + (lvl - 1) * 5, d.atk + (lvl - 1), false)
+
+func _enemy_soul(p_name: String, job: String, lore: String) -> Combatant:
+	var c := Combatant.new(p_name, job, Color(0.55, 0.55, 0.6), 35, 7, true)
+	c.lore = lore
+	return c
 
 func _start_round() -> void:
 	pending = []
@@ -215,8 +224,31 @@ func _all_dead(arr: Array[Combatant]) -> bool:
 	return true
 
 func _end_battle(won: bool) -> void:
+	if won:
+		_apply_levelups()
+		phase = Phase.COLLECT
+		_log("승리! 쓰러진 영혼 중 하나를 거둘 수 있다.")
+	else:
+		phase = Phase.RESULT
+		_log("패배… 강령술사도 쓰러졌다.")
+	_refresh()
+
+## 생존한 참전 영혼(로스터 앞 3인) 레벨업 — 영구 보존.
+func _apply_levelups() -> void:
+	var ups: Array[String] = []
+	for i in allies.size():
+		if allies[i].alive() and i < GameState.roster.size():
+			GameState.roster[i].level += 1
+			ups.append("%s Lv%d" % [GameState.roster[i].name, GameState.roster[i].level])
+	if not ups.is_empty():
+		_log("레벨업 ▸ " + ", ".join(ups))
+
+## 거두기 — 쓰러진 영혼 하나를 로스터에 추가 + 사연 해금.
+func _on_collect(e: Combatant) -> void:
+	GameState.bind_soul({"job": e.job, "name": e.display_name, "lore": e.lore, "level": 1})
+	_log("%s의 영혼을 거뒀다. (보유 %d)" % [e.display_name, GameState.roster.size()])
+	_log("“%s”" % e.lore)
 	phase = Phase.RESULT
-	_log("승리! 영혼을 거둘 수 있다." if won else "패배… 강령술사도 쓰러졌다.")
 	_refresh()
 
 # ── 렌더 ─────────────────────────────────────────────────────────
@@ -226,7 +258,14 @@ func _refresh() -> void:
 	_clear(action_box)
 
 	for e in enemies:
-		enemies_box.add_child(_unit_card(e, phase == Phase.SELECT_TARGET and e.alive(), _on_target))
+		var e_click := false
+		var e_cb := _on_target
+		if phase == Phase.SELECT_TARGET and e.alive():
+			e_click = true
+		elif phase == Phase.COLLECT and not e.alive():
+			e_click = true
+			e_cb = _on_collect
+		enemies_box.add_child(_unit_card(e, e_click, e_cb))
 	for a in allies:
 		var sel := phase == Phase.SELECT_ACTOR and pending.has(a)
 		allies_box.add_child(_unit_card(a, sel, _on_actor))
@@ -249,10 +288,13 @@ func _refresh() -> void:
 		Phase.SELECT_TARGET:
 			prompt_label.text = "%s의 대상을 선택(위쪽 적)" % actor.display_name
 			_add_action_btn("◂ 뒤로", Color(0.5, 0.5, 0.58), _on_back)
+		Phase.COLLECT:
+			prompt_label.text = "거둘 영혼을 선택 (위쪽 쓰러진 적)"
 		Phase.RESULT:
 			var won := _all_dead(enemies)
 			prompt_label.text = "전투 종료 — " + ("승리" if won else "패배")
-			_add_action_btn("다시 전투", Color(0.6, 0.45, 0.95), func(): _start_battle())
+			var first := "다음 전투" if won else "다시 전투"
+			_add_action_btn(first, Color(0.6, 0.45, 0.95), func(): _start_battle())
 			_add_action_btn("타이틀로", Color(0.5, 0.5, 0.58), func(): get_tree().change_scene_to_file("res://scenes/ui/title.tscn"))
 
 ## 유닛 카드. clickable면 onclick(Combatant) 연결한 버튼으로(선택 가능 시 강조 테두리).
@@ -260,7 +302,7 @@ func _unit_card(c: Combatant, clickable: bool, onclick: Callable) -> Control:
 	var card := PanelContainer.new()
 	card.custom_minimum_size = Vector2(190, 120)
 	var accent := c.color if c.alive() else Color(0.3, 0.3, 0.34)
-	card.add_theme_stylebox_override("panel", UIKit.panel(accent if clickable else Color(0, 0, 0, 0), 12, c.alive()))
+	card.add_theme_stylebox_override("panel", UIKit.panel(SELECT_ACCENT if clickable else Color(0, 0, 0, 0), 12, c.alive()))
 
 	var box := VBoxContainer.new()
 	box.add_theme_constant_override("separation", 4)
