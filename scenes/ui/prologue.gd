@@ -43,7 +43,7 @@ func _ready() -> void:
 	go.add_theme_font_size_override("font_size", 24)
 	UIKit.style_button(go, Color(0.6, 0.45, 0.95))
 	go.modulate.a = 0.0
-	go.pressed.connect(func(): get_tree().change_scene_to_file("res://scenes/battle/battle.tscn"))
+	go.pressed.connect(func(): get_tree().change_scene_to_file("res://scenes/ui/map.tscn"))
 	v.add_child(go)
 
 	# 한 줄씩 차례로 페이드인 → 마지막에 버튼

@@ -59,7 +59,7 @@ func _ready() -> void:
 	btns.add_theme_constant_override("separation", 14)
 	btns.alignment = BoxContainer.ALIGNMENT_CENTER
 	root.add_child(btns)
-	start_btn = _btn("전투 시작", Color(0.6, 0.45, 0.95), func(): get_tree().change_scene_to_file("res://scenes/battle/battle.tscn"))
+	start_btn = _btn("편성 완료 ▸ 지도", Color(0.6, 0.45, 0.95), func(): get_tree().change_scene_to_file("res://scenes/ui/map.tscn"))
 	btns.add_child(start_btn)
 	btns.add_child(_btn("타이틀로", Color(0.5, 0.5, 0.58), func(): get_tree().change_scene_to_file("res://scenes/ui/title.tscn")))
 

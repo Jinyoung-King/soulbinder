@@ -1,7 +1,7 @@
 extends Node
 ## 전역 상태(오토로드). 버전 + 거둔 영혼 로스터/사연(전투 사이 영구 보존).
 
-const VERSION := "v0.7"  ## 빌드 버전(타이틀 표기) — 빌드마다 올릴 것
+const VERSION := "v0.8"  ## 빌드 버전(타이틀 표기) — 빌드마다 올릴 것
 
 const PARTY_MAX := 3  ## 출전 팀 최대 인원
 
@@ -11,6 +11,8 @@ var roster: Array[Dictionary] = []
 var party: Array[int] = []
 ## 거두며 해금한 '그날 밤의 증언' 조각.
 var story_fragments: Array[String] = []
+## 지역 진행 위치(= 다음에 플레이할 노드 인덱스). 승리 시 증가.
+var region_node := 0
 
 func _ready() -> void:
 	if roster.is_empty():

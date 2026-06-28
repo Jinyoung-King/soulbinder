@@ -109,16 +109,15 @@ func _start_battle() -> void:
 		if idx >= 0 and idx < GameState.roster.size():
 			allies.append(_ally(GameState.roster[idx]))
 			ally_src.append(idx)
-	# 적 = 거둘 수 있는 쓰러진 영혼(직업·사연 보유)
-	enemies = [
-		_enemy_soul("부패한 근위병", Jobs.KNIGHT, "성문이 부서지던 순간까지 창을 거두지 않았다.", 38, 7),
-		_enemy_soul("역병 운반자", Jobs.PLAGUE, "도망치다 쓰러진 자리에서 역병을 퍼뜨렸다.", 30, 6),
-		_enemy_soul("피에 굶주린 광인", Jobs.BERSERKER, "복수를 외치다 제 편마저 베고 미쳐 버린 검사.", 44, 8),
-	]
+	# 적 = 현재 노드의 인카운터(거둘 수 있는 영혼: 직업·사연 보유)
+	var node := Encounters.get_node(GameState.region_node)
+	enemies = []
+	for e in node.enemies:
+		enemies.append(_enemy_soul(e.name, e.job, e.lore, e.hp, e.atk))
 	round_no = 1
 	busy = false
 	show_tip = GameState.story_fragments.is_empty()  # 아직 한 번도 안 거뒀으면 첫 전투
-	log_lines = ["멸망한 왕성 변두리. 쓰러진 자들이 다시 일어선다…"]
+	log_lines = ["[%s] %s" % [node.name, node.intro]]
 	if show_tip:
 		log_lines.append("팁: 독술사 ‘역병의 표식’으로 취약을 걸고 → 처형인 ‘단두’로 마무리. 기사로 버티며 콤보를 맞춰요.")
 	_start_round()
@@ -286,6 +285,7 @@ func _all_dead(arr: Array[Combatant]) -> bool:
 func _end_battle(won: bool) -> void:
 	if won:
 		_apply_levelups()
+		GameState.region_node += 1  # 노드 클리어 → 다음 노드 해금
 		phase = Phase.COLLECT
 		_log("승리! 쓰러진 영혼 중 하나를 거둘 수 있다.")
 	else:
@@ -383,10 +383,11 @@ func _refresh() -> void:
 		Phase.RESULT:
 			var won := _all_dead(enemies)
 			prompt_label.text = "전투 종료 — " + ("승리" if won else "패배")
-			var first := "다음 전투" if won else "다시 전투"
-			_add_action_btn(first, Color(0.6, 0.45, 0.95), func(): _start_battle())
 			if won:
+				_add_action_btn("지도로", Color(0.6, 0.45, 0.95), func(): get_tree().change_scene_to_file("res://scenes/ui/map.tscn"))
 				_add_action_btn("팀 편성", Color(0.5, 0.62, 0.95), func(): get_tree().change_scene_to_file("res://scenes/ui/party.tscn"))
+			else:
+				_add_action_btn("다시 전투", Color(0.6, 0.45, 0.95), func(): _start_battle())
 			_add_action_btn("타이틀로", Color(0.5, 0.5, 0.58), func(): get_tree().change_scene_to_file("res://scenes/ui/title.tscn"))
 
 func _set_banner() -> void:
