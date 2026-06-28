@@ -1,0 +1,28 @@
+; soulbinder — 영혼 수집·육성 턴제 RPG (가로 / 웹 타깃)
+; Godot 4.6 / 웹(HTML5)이라 호환성 렌더러(gl_compatibility)
+
+config_version=5
+
+[application]
+
+config/name="soulbinder"
+run/main_scene="res://scenes/ui/title.tscn"
+config/features=PackedStringArray("4.6", "GL Compatibility")
+config/icon="res://icon.png"
+
+[autoload]
+
+GameState="*res://data/game_state.gd"
+
+[display]
+
+window/size/viewport_width=1280
+window/size/viewport_height=720
+window/stretch/mode="canvas_items"
+window/stretch/aspect="keep"
+window/handheld/orientation="landscape"
+
+[rendering]
+
+renderer/rendering_method="gl_compatibility"
+renderer/rendering_method.mobile="gl_compatibility"

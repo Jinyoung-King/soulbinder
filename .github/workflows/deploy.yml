@@ -1,0 +1,55 @@
+name: Deploy Web to GitHub Pages
+
+# main에 푸시(또는 수동 실행)하면 Godot로 웹 빌드 후 gh-pages 브랜치에 publish.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: deploy-pages
+  cancel-in-progress: true
+
+env:
+  GODOT_VERSION: "4.6.3"
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Godot + 웹 export 템플릿 설치
+        run: |
+          set -e
+          GV="${GODOT_VERSION}"
+          BASE="https://github.com/godotengine/godot/releases/download/${GV}-stable"
+          curl -fL -o godot.zip "${BASE}/Godot_v${GV}-stable_linux.x86_64.zip"
+          curl -fL -o templates.tpz "${BASE}/Godot_v${GV}-stable_export_templates.tpz"
+          unzip -q godot.zip
+          mv "Godot_v${GV}-stable_linux.x86_64" godot
+          chmod +x godot
+          mkdir -p "$HOME/.local/share/godot/export_templates/${GV}.stable"
+          unzip -q templates.tpz
+          mv templates/* "$HOME/.local/share/godot/export_templates/${GV}.stable/"
+
+      - name: 웹 빌드 (Web 프리셋)
+        run: |
+          set -e
+          mkdir -p build/web
+          ./godot --headless --import --path . || true
+          ./godot --headless --import --path . || true
+          ./godot --headless --export-release "Web" build/web/index.html --path .
+          test -f build/web/index.wasm && echo "빌드 OK: $(ls -la build/web/index.wasm)"
+
+      - name: gh-pages 브랜치에 배포
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./build/web
+          publish_branch: gh-pages
+          enable_jekyll: false
