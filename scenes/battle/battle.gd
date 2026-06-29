@@ -128,7 +128,7 @@ func _start_battle() -> void:
 	var node := RunMap.node(GameState.region_idx, GameState.cur_node)
 	node_type = node.type
 	enemies = []
-	for e in node.enemies:
+	for e in RunMap.gen_enemies(GameState.region_idx, node):  # 보스=고정, 그 외=풀에서 무작위
 		var ec := _enemy_soul(e.name, e.job, e.lore, e.hp, e.atk)
 		ec.cd = 1 + enemies.size()  # 고유기 첫 사용을 스태거(1마리씩 시차)
 		enemies.append(ec)

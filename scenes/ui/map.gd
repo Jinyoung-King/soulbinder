@@ -108,12 +108,13 @@ func _node_card(ri: int, id: String, reach: Array) -> Control:
 		accent = Color(0.7, 0.55, 1.0); state_txt = "▶ 선택 가능"; name_col = Color.WHITE
 
 	# 타입별 보상/위험 한 줄
+	var ecount: int = n.enemies.size() if n.has("enemies") else n.get("count", 0)
 	var info := ""
 	match n.type:
-		"battle": info = "전투 · 적 %d" % n.enemies.size()
-		"elite": info = "정예 · 적 %d · 보상 +%dLv" % [n.enemies.size(), RunMap.ELITE_BONUS]
+		"battle": info = "전투 · 적 %d" % ecount
+		"elite": info = "정예 · 적 %d · 보상 +%dLv" % [ecount, RunMap.ELITE_BONUS]
 		"rest": info = "휴식 · 팀 회복 + %dLv" % RunMap.REST_LEVELS
-		"boss": info = "보스 · 적 %d" % n.enemies.size()
+		"boss": info = "보스 · 적 %d" % ecount
 
 	var card := PanelContainer.new()
 	card.custom_minimum_size = Vector2(186, 104)

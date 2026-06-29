@@ -8,6 +8,51 @@ extends RefCounted
 const REST_LEVELS := 1   # 휴식 시 출전 팀 레벨 증가
 const ELITE_BONUS := 1   # 정예 처치 시 팀 추가 레벨(일반 +1에 더해)
 
+## 지역별 적 템플릿 풀. battle/elite 노드는 여기서 매 런 샘플링 → 런마다 적·수집 대상이 달라짐.
+## (보스 노드는 고정 enemies로 서사 유지) 밸런스는 풀 티어로 한정.
+const POOLS := [
+	[  # 1장 · 왕성 (보통 티어)
+		{"name": "부패한 근위병", "job": Jobs.KNIGHT, "hp": 36, "atk": 7, "lore": "성문이 부서지던 순간까지 창을 거두지 않았다."},
+		{"name": "역병 운반자", "job": Jobs.PLAGUE, "hp": 30, "atk": 6, "lore": "도망치다 쓰러진 자리에서 역병을 퍼뜨렸다."},
+		{"name": "피에 굶주린 광인", "job": Jobs.BERSERKER, "hp": 44, "atk": 8, "lore": "복수를 외치다 제 편마저 베고 미쳐 버린 검사."},
+		{"name": "방랑하는 망령", "job": Jobs.HEADSMAN, "hp": 40, "atk": 8, "lore": "거리를 떠돌며 산 자의 목을 노린다."},
+		{"name": "떠도는 치유사", "job": Jobs.MENDER, "hp": 38, "atk": 6, "lore": "죽은 자를 억지로 일으켜 세우려 했다."},
+	],
+	[  # 2장 · 왕궁 심층 (강한 티어)
+		{"name": "배신한 친위병", "job": Jobs.KNIGHT, "hp": 52, "atk": 9, "lore": "왕을 지키라는 칼로 왕의 등을 노렸다."},
+		{"name": "흑사병 사령", "job": Jobs.PLAGUE, "hp": 46, "atk": 8, "lore": "역병을 무기로 바꾼 자."},
+		{"name": "광란의 검사", "job": Jobs.BERSERKER, "hp": 60, "atk": 10, "lore": "충성도 광기도 같은 칼끝이었다."},
+		{"name": "처형인의 망령", "job": Jobs.HEADSMAN, "hp": 56, "atk": 10, "lore": "그날 밤 가장 많은 목을 친 칼."},
+		{"name": "피의 사제", "job": Jobs.MENDER, "hp": 58, "atk": 8, "lore": "산 자의 피로 죽은 자를 일으켜 세웠다."},
+	],
+]
+
+## 노드 인카운터 생성 — 보스는 고정 enemies, 그 외엔 풀에서 count만큼 무작위 샘플.
+## elite는 스탯 강화(+이름 접두). 매 런 달라진다.
+static func gen_enemies(ri: int, n: Dictionary) -> Array:
+	if n.has("enemies"):
+		return n.enemies  # 보스 등 고정
+	var pool: Array = POOLS[clampi(ri, 0, POOLS.size() - 1)]
+	var idxs := []
+	for i in pool.size():
+		idxs.append(i)
+	# Fisher-Yates 셔플
+	for i in range(idxs.size() - 1, 0, -1):
+		var j := randi() % (i + 1)
+		var t = idxs[i]; idxs[i] = idxs[j]; idxs[j] = t
+	var count: int = mini(n.get("count", 2), pool.size())
+	var elite: bool = n.type == "elite"
+	var out := []
+	for k in count:
+		var src: Dictionary = pool[idxs[k]]
+		var e := src.duplicate(true)
+		if elite:
+			e.hp = int(round(e.hp * 1.3))
+			e.atk += 2
+			e.name = "정예 " + e.name
+		out.append(e)
+	return out
+
 const REGIONS := [
 	{
 		"name": "1장 · 그날의 잔해 · 왕성",
@@ -15,34 +60,16 @@ const REGIONS := [
 		"order": ["n0", "n1", "n2", "n3", "n4", "n5", "n6"],
 		"outro": "성을 가로질렀다. 거둔 증언이 한 방향을 가리킨다 — 더 깊은 안쪽, 옥좌를.",
 		"nodes": {
-			"n0": {"type": "battle", "name": "성문 앞", "layer": 0, "next": ["n1", "n2"],
-				"intro": "성문 앞. 가장 먼저 쓰러졌던 자들이 너를 막아선다.",
-				"enemies": [
-					{"name": "부패한 근위병", "job": Jobs.KNIGHT, "hp": 34, "atk": 6, "lore": "성문이 부서지던 순간까지 창을 거두지 않았다."},
-					{"name": "역병 운반자", "job": Jobs.PLAGUE, "hp": 28, "atk": 6, "lore": "도망치다 쓰러진 자리에서 역병을 퍼뜨렸다."},
-				]},
-			"n1": {"type": "elite", "name": "정예 · 근위장", "layer": 1, "next": ["n3"],
-				"intro": "정예. 근위장이 부러진 검을 들고 길목을 지킨다.",
-				"enemies": [
-					{"name": "근위장", "job": Jobs.KNIGHT, "hp": 62, "atk": 9, "lore": "성이 무너져도 자리를 떠나라는 명만은 받지 못했다."},
-					{"name": "부패한 근위병", "job": Jobs.KNIGHT, "hp": 38, "atk": 7, "lore": "대장 곁에서 함께 굳었다."},
-				]},
+			"n0": {"type": "battle", "name": "성문 앞", "layer": 0, "next": ["n1", "n2"], "count": 2,
+				"intro": "성문 앞. 가장 먼저 쓰러졌던 자들이 너를 막아선다."},
+			"n1": {"type": "elite", "name": "정예 · 잔존 수비대", "layer": 1, "next": ["n3"], "count": 2,
+				"intro": "정예. 마지막까지 버틴 자들이 길목을 지킨다."},
 			"n2": {"type": "rest", "name": "야영지", "layer": 1, "next": ["n3"],
 				"intro": "무너진 벽 아래 잠시 영혼들을 추스른다."},
-			"n3": {"type": "battle", "name": "무너진 시가지", "layer": 2, "next": ["n4", "n5"],
-				"intro": "무너진 시가지. 광기가 거리를 메웠다.",
-				"enemies": [
-					{"name": "부패한 근위병", "job": Jobs.KNIGHT, "hp": 40, "atk": 7, "lore": "약탈을 막으려다 약탈자가 되어 죽었다."},
-					{"name": "역병 운반자", "job": Jobs.PLAGUE, "hp": 32, "atk": 6, "lore": "마지막 숨까지 역병을 토했다."},
-					{"name": "피에 굶주린 광인", "job": Jobs.BERSERKER, "hp": 44, "atk": 8, "lore": "복수를 외치다 제 편마저 베고 미쳐 버린 검사."},
-				]},
-			"n4": {"type": "elite", "name": "정예 · 광신 집단", "layer": 3, "next": ["n6"],
-				"intro": "정예. 거짓 신탁에 미친 광신도들이 달려든다.",
-				"enemies": [
-					{"name": "광신 치유사", "job": Jobs.MENDER, "hp": 40, "atk": 6, "lore": "거짓 기적으로 죽어가는 자들을 억지로 붙들어 두었다."},
-					{"name": "신전 광신도", "job": Jobs.BERSERKER, "hp": 52, "atk": 9, "lore": "거짓 신탁을 외치며 칼을 휘둘렀다."},
-					{"name": "광신 사제", "job": Jobs.PLAGUE, "hp": 46, "atk": 8, "lore": "신께 빌다 신을 저주하며 죽었다."},
-				]},
+			"n3": {"type": "battle", "name": "무너진 시가지", "layer": 2, "next": ["n4", "n5"], "count": 3,
+				"intro": "무너진 시가지. 광기가 거리를 메웠다."},
+			"n4": {"type": "elite", "name": "정예 · 광신 집단", "layer": 3, "next": ["n6"], "count": 3,
+				"intro": "정예. 거짓 신탁에 미친 자들이 달려든다."},
 			"n5": {"type": "rest", "name": "폐사당", "layer": 3, "next": ["n6"],
 				"intro": "버려진 사당에서 숨을 고른다."},
 			"n6": {"type": "boss", "name": "왕의 침소 · 보스", "layer": 4, "next": [],
@@ -59,34 +86,16 @@ const REGIONS := [
 		"order": ["m0", "m1", "m2", "m3", "m4", "m5", "m6"],
 		"outro": "옥좌의 그림자가 흩어진다. 그날 밤의 진실이 마침내 드러난다.",
 		"nodes": {
-			"m0": {"type": "battle", "name": "피의 회랑", "layer": 0, "next": ["m1", "m2"],
-				"intro": "피의 회랑. 안으로 들어설수록 적은 더 강해진다.",
-				"enemies": [
-					{"name": "배신한 친위병", "job": Jobs.KNIGHT, "hp": 50, "atk": 8, "lore": "왕을 지키라는 칼로 왕의 등을 노렸다."},
-					{"name": "흑사병 사령", "job": Jobs.PLAGUE, "hp": 42, "atk": 8, "lore": "역병을 무기로 바꾼 자."},
-				]},
-			"m1": {"type": "elite", "name": "정예 · 배신한 친위대", "layer": 1, "next": ["m3"],
-				"intro": "정예. 가장 가까이서 왕을 지키던 자들이 칼을 돌렸다.",
-				"enemies": [
-					{"name": "친위대장", "job": Jobs.KNIGHT, "hp": 84, "atk": 11, "lore": "왕의 곁을 가장 가까이서 지켰고, 가장 먼저 등을 돌렸다."},
-					{"name": "광란의 검사", "job": Jobs.BERSERKER, "hp": 60, "atk": 10, "lore": "충성도 광기도 같은 칼끝이었다."},
-				]},
+			"m0": {"type": "battle", "name": "피의 회랑", "layer": 0, "next": ["m1", "m2"], "count": 2,
+				"intro": "피의 회랑. 안으로 들어설수록 적은 더 강해진다."},
+			"m1": {"type": "elite", "name": "정예 · 배신한 친위대", "layer": 1, "next": ["m3"], "count": 2,
+				"intro": "정예. 가장 가까이서 왕을 지키던 자들이 칼을 돌렸다."},
 			"m2": {"type": "rest", "name": "옛 침전", "layer": 1, "next": ["m3"],
 				"intro": "먼지 쌓인 침전에서 영혼들을 추스른다."},
-			"m3": {"type": "battle", "name": "거울의 방", "layer": 2, "next": ["m4", "m5"],
-				"intro": "거울의 방. 무수한 그림자가 너를 노려본다.",
-				"enemies": [
-					{"name": "처형인의 망령", "job": Jobs.HEADSMAN, "hp": 58, "atk": 10, "lore": "그날 밤 가장 많은 목을 친 칼."},
-					{"name": "흑사병 사령", "job": Jobs.PLAGUE, "hp": 48, "atk": 8, "lore": "거울 속에서도 역병을 퍼뜨린다."},
-					{"name": "배신한 친위병", "job": Jobs.KNIGHT, "hp": 54, "atk": 9, "lore": "거울에 비친 죄를 외면했다."},
-				]},
-			"m4": {"type": "elite", "name": "정예 · 피의 사제단", "layer": 3, "next": ["m6"],
-				"intro": "정예. 산 자의 피로 죽은 자를 부리는 사제단.",
-				"enemies": [
-					{"name": "피의 대사제", "job": Jobs.MENDER, "hp": 64, "atk": 8, "lore": "산 자의 피로 죽은 자를 일으켜 세웠다."},
-					{"name": "광란의 검사", "job": Jobs.BERSERKER, "hp": 62, "atk": 11, "lore": "피의 의식 속에서 미쳐 날뛰었다."},
-					{"name": "흑사병 사령", "job": Jobs.PLAGUE, "hp": 52, "atk": 9, "lore": "사제단의 마지막 숨결."},
-				]},
+			"m3": {"type": "battle", "name": "거울의 방", "layer": 2, "next": ["m4", "m5"], "count": 3,
+				"intro": "거울의 방. 무수한 그림자가 너를 노려본다."},
+			"m4": {"type": "elite", "name": "정예 · 피의 사제단", "layer": 3, "next": ["m6"], "count": 3,
+				"intro": "정예. 산 자의 피로 죽은 자를 부리는 사제단."},
 			"m5": {"type": "rest", "name": "옥좌 앞 제단", "layer": 3, "next": ["m6"],
 				"intro": "옥좌 앞 제단에서 마지막으로 숨을 고른다."},
 			"m6": {"type": "boss", "name": "옥좌 · 찬탈자의 그림자", "layer": 4, "next": [],

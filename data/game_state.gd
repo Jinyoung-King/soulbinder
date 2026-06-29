@@ -1,7 +1,7 @@
 extends Node
 ## 전역 상태(오토로드). 버전 + 거둔 영혼 로스터/사연(전투 사이 영구 보존).
 
-const VERSION := "v0.17"  ## 빌드 버전(타이틀 표기) — 빌드마다 올릴 것
+const VERSION := "v0.18"  ## 빌드 버전(타이틀 표기) — 빌드마다 올릴 것
 
 const PARTY_MAX := 3  ## 출전 팀 최대 인원
 const EXP_PER_ENEMY := 3  ## 전투 승리 시 생존 영혼이 적 1체당 얻는 경험치
@@ -46,6 +46,7 @@ func heal_party() -> void:
 			roster[idx]["hp"] = max_hp(roster[idx])
 
 func _ready() -> void:
+	randomize()  # 런마다 적 구성·수집 대상이 달라지도록 RNG 시드
 	if roster.is_empty():
 		roster = [
 			{"job": Jobs.KNIGHT, "name": "기사", "lore": "왕을 끝까지 지키려다 성문 앞에서 스러진 근위병.", "level": 1, "exp": 0},
