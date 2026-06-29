@@ -17,11 +17,13 @@ func _ready() -> void:
 	v.offset_left = 30; v.offset_right = -30
 	add_child(v)
 
+	var ri := GameState.region_idx
 	var pos := GameState.run_pos
-	var done: bool = pos != "" and RunMap.node(pos).type == "boss"
-	var reach: Array = [] if done else RunMap.reachable(pos)
+	var done: bool = pos != "" and RunMap.node(ri, pos).type == "boss"
+	var reach: Array = [] if done else RunMap.reachable(ri, pos)
+	var last_region: bool = ri >= RunMap.region_count() - 1
 
-	var title := _label(RunMap.REGION_NAME, 28, Color(0.85, 0.82, 0.98))
+	var title := _label(RunMap.region(ri).name, 28, Color(0.85, 0.82, 0.98))
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	v.add_child(title)
 	var head := "지역 클리어" if done else "갈림길을 선택하라 — 정예는 위험하지만 더 강해진다"
@@ -47,7 +49,7 @@ func _ready() -> void:
 	graph.add_theme_constant_override("separation", 8)
 	graph.alignment = BoxContainer.ALIGNMENT_CENTER
 	v.add_child(graph)
-	for layer in RunMap.max_layer() + 1:
+	for layer in RunMap.max_layer(ri) + 1:
 		if layer > 0:
 			var arr := _label("→", 22, Color(0.38, 0.38, 0.5))
 			arr.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
@@ -55,33 +57,45 @@ func _ready() -> void:
 		var col := VBoxContainer.new()
 		col.add_theme_constant_override("separation", 10)
 		col.alignment = BoxContainer.ALIGNMENT_CENTER
-		for id in RunMap.ORDER:
-			if RunMap.node(id).layer == layer:
-				col.add_child(_node_card(id, reach))
+		for id in RunMap.order(ri):
+			if RunMap.node(ri, id).layer == layer:
+				col.add_child(_node_card(ri, id, reach))
 		graph.add_child(col)
 
 	v.add_child(_sep(8))
 
 	if done:
-		var msg := _label("그날 밤의 끝을 보았다. 거둔 증언이 더 깊은 어둠을 가리킨다…", 18, Color(0.78, 0.74, 0.9))
+		var msg := _label(RunMap.region(ri).get("outro", "지역을 클리어했다."), 18, Color(0.78, 0.74, 0.9))
 		msg.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		msg.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		v.add_child(msg)
+		if last_region:  # 최종 결말 — 진실 공개
+			var truth := _label("【 그날 밤의 진실 】  " + GameState.truth_hint(), 17, Color(0.85, 0.72, 0.55))
+			truth.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+			truth.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+			v.add_child(truth)
 
 	# 하단 버튼
 	var btns := HBoxContainer.new()
 	btns.add_theme_constant_override("separation", 14)
 	btns.alignment = BoxContainer.ALIGNMENT_CENTER
 	v.add_child(btns)
-	if done:
-		btns.add_child(_btn("지역 다시 도전", Color(0.6, 0.45, 0.95), func():
+	if done and not last_region:
+		btns.add_child(_btn("다음 지역으로", Color(0.6, 0.45, 0.95), func():
+			GameState.region_idx += 1
+			GameState.reset_run()
+			get_tree().reload_current_scene()))
+	elif done:
+		btns.add_child(_btn("처음부터 (회복)", Color(0.6, 0.45, 0.95), func():
+			GameState.region_idx = 0
 			GameState.reset_run()
 			get_tree().reload_current_scene()))
 	btns.add_child(_btn("영혼 편성", Color(0.5, 0.62, 0.95), func(): get_tree().change_scene_to_file("res://scenes/ui/party.tscn")))
 	btns.add_child(_btn("증언의 서", Color(0.62, 0.55, 0.78), func(): get_tree().change_scene_to_file("res://scenes/ui/codex.tscn")))
 	btns.add_child(_btn("타이틀로", Color(0.5, 0.5, 0.58), func(): get_tree().change_scene_to_file("res://scenes/ui/title.tscn")))
 
-func _node_card(id: String, reach: Array) -> Control:
-	var n := RunMap.node(id)
+func _node_card(ri: int, id: String, reach: Array) -> Control:
+	var n := RunMap.node(ri, id)
 	var cleared := GameState.run_cleared.has(id)
 	var choosable := reach.has(id) and not cleared
 
@@ -115,7 +129,7 @@ func _node_card(id: String, reach: Array) -> Control:
 		var btn := Button.new()
 		btn.flat = true
 		btn.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-		btn.pressed.connect(func(): _enter(id))
+		btn.pressed.connect(func(): _enter(ri, id))
 		card.add_child(btn)
 	return card
 
@@ -126,8 +140,8 @@ func _type_col(t: String) -> Color:
 		"boss": return Color(0.95, 0.45, 0.5)
 		_: return Color(0.62, 0.6, 0.72)
 
-func _enter(id: String) -> void:
-	var n := RunMap.node(id)
+func _enter(ri: int, id: String) -> void:
+	var n := RunMap.node(ri, id)
 	if n.type == "rest":
 		GameState.heal_party()  # 전투 사이 회복 — 휴식의 핵심 가치
 		GameState.level_party(RunMap.REST_LEVELS)

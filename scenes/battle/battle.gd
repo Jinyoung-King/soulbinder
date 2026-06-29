@@ -115,8 +115,8 @@ func _start_battle() -> void:
 			ally_src.append(idx)
 	# 적 = 현재 진입 노드의 인카운터(거둘 수 있는 영혼: 직업·사연 보유)
 	if GameState.cur_node == "":
-		GameState.cur_node = RunMap.ENTRY
-	var node := RunMap.node(GameState.cur_node)
+		GameState.cur_node = RunMap.entry(GameState.region_idx)
+	var node := RunMap.node(GameState.region_idx, GameState.cur_node)
 	node_type = node.type
 	enemies = []
 	for e in node.enemies:

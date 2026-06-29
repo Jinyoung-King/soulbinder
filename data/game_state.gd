@@ -1,7 +1,7 @@
 extends Node
 ## 전역 상태(오토로드). 버전 + 거둔 영혼 로스터/사연(전투 사이 영구 보존).
 
-const VERSION := "v0.14"  ## 빌드 버전(타이틀 표기) — 빌드마다 올릴 것
+const VERSION := "v0.15"  ## 빌드 버전(타이틀 표기) — 빌드마다 올릴 것
 
 const PARTY_MAX := 3  ## 출전 팀 최대 인원
 const EXP_PER_ENEMY := 3  ## 전투 승리 시 생존 영혼이 적 1체당 얻는 경험치
@@ -14,6 +14,7 @@ var party: Array[int] = []
 var story_fragments: Array[Dictionary] = []
 
 ## ── 분기 런 진행 ──
+var region_idx := 0                # 현재 지역(장) 인덱스
 var run_pos: String = ""           # 현재 위치 노드 id("" = 런 시작)
 var run_cleared: Array[String] = []  # 클리어한 노드 id
 var cur_node: String = ""          # 진입한 전투 노드(battle 씬이 읽음)
