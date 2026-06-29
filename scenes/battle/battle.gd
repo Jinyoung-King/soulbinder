@@ -132,6 +132,14 @@ func _start_battle() -> void:
 		var ec := _enemy_soul(e.name, e.job, e.lore, e.hp, e.atk)
 		ec.cd = 1 + enemies.size()  # 고유기 첫 사용을 스태거(1마리씩 시차)
 		enemies.append(ec)
+	# 유물 효과(전투 시작)
+	for a in allies:
+		if GameState.has_relic("vigor"): a.atk += 2
+		if GameState.has_relic("vital"): a.shield += 10
+		if GameState.has_relic("armor"): a.dmg_reduce += 1
+	if GameState.has_relic("radiance"):
+		for e in enemies:
+			e.vulnerable = 1
 	round_no = 1
 	busy = false
 	show_tip = GameState.story_fragments.is_empty()  # 아직 한 번도 안 거뒀으면 첫 전투
@@ -156,6 +164,10 @@ func _enemy_soul(p_name: String, job: String, lore: String, hp: int, atk: int) -
 	return c
 
 func _start_round() -> void:
+	if GameState.has_relic("regen"):  # 매 라운드 재생
+		for a in allies:
+			if a.alive():
+				a.heal(3)
 	pending = []
 	for a in allies:
 		if a.alive():
@@ -372,6 +384,10 @@ func _end_battle(won: bool) -> void:
 		if node_type == "elite":
 			GameState.level_party(RunMap.ELITE_BONUS)  # 정예 보상: 팀 추가 레벨
 			_log("정예 격파 보상 ▸ 출전 팀 전원 +%d 레벨" % RunMap.ELITE_BONUS)
+		if node_type == "elite" or node_type == "boss":  # 유물 획득
+			var rid := GameState.grant_random_relic()
+			if rid != "":
+				_log("유물 획득 ▸ %s (%s)" % [Relics.get_def(rid).name, Relics.get_def(rid).desc])
 		phase = Phase.COLLECT
 		_log("승리! 쓰러진 영혼 중 하나를 거둘 수 있다.")
 	else:
@@ -511,7 +527,7 @@ func _refresh() -> void:
 			else:
 				# 전멸 = 런 실패. 처음부터(전원 회복)로.
 				_add_action_btn("처음부터 (회복)", Color(0.6, 0.45, 0.95), func():
-					GameState.reset_run()
+					GameState.new_run()
 					get_tree().change_scene_to_file("res://scenes/ui/map.tscn"))
 			_add_action_btn("타이틀로", Color(0.5, 0.5, 0.58), func(): get_tree().change_scene_to_file("res://scenes/ui/title.tscn"))
 

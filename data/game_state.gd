@@ -1,7 +1,7 @@
 extends Node
 ## 전역 상태(오토로드). 버전 + 거둔 영혼 로스터/사연(전투 사이 영구 보존).
 
-const VERSION := "v0.18"  ## 빌드 버전(타이틀 표기) — 빌드마다 올릴 것
+const VERSION := "v0.19"  ## 빌드 버전(타이틀 표기) — 빌드마다 올릴 것
 
 const PARTY_MAX := 3  ## 출전 팀 최대 인원
 const EXP_PER_ENEMY := 3  ## 전투 승리 시 생존 영혼이 적 1체당 얻는 경험치
@@ -18,14 +18,36 @@ var region_idx := 0                # 현재 지역(장) 인덱스
 var run_pos: String = ""           # 현재 위치 노드 id("" = 런 시작)
 var run_cleared: Array[String] = []  # 클리어한 노드 id
 var cur_node: String = ""          # 진입한 전투 노드(battle 씬이 읽음)
+var relics: Array[String] = []     # 보유 유물(런 내내 유지, 새 런에서 초기화)
 
-## 런 처음부터 다시(로스터·레벨은 유지 = NG+식). 전원 풀피 회복.
+func has_relic(id: String) -> bool:
+	return relics.has(id)
+
+## 미보유 유물 하나 무작위 지급. 지급된 id 반환(전부 보유면 "").
+func grant_random_relic() -> String:
+	var avail := []
+	for id in Relics.IDS:
+		if not relics.has(id):
+			avail.append(id)
+	if avail.is_empty():
+		return ""
+	var id: String = avail[randi() % avail.size()]
+	relics.append(id)
+	return id
+
+## 챕터 리셋(위치·HP만, 유물/지역 유지) — 지역 전환·전멸 복귀 공용.
 func reset_run() -> void:
 	run_pos = ""
 	run_cleared = []
 	cur_node = ""
 	for e in roster:
 		e["hp"] = max_hp(e)
+
+## 완전히 새 런 — 유물·지역까지 초기화(전멸 후 처음부터 / 최종 클리어 후 재도전).
+func new_run() -> void:
+	relics = []
+	region_idx = 0
+	reset_run()
 
 ## 레벨 기준 최대 HP.
 func max_hp(entry: Dictionary) -> int:

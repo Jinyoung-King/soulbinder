@@ -42,6 +42,14 @@ func _ready() -> void:
 		hp.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		v.add_child(hp)
 
+	if not GameState.relics.is_empty():
+		var rn: Array[String] = []
+		for id in GameState.relics:
+			rn.append(Relics.get_def(id).name)
+		var rl := _label("유물  ·  " + ", ".join(rn), 15, Color(0.85, 0.78, 0.5))
+		rl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		v.add_child(rl)
+
 	v.add_child(_sep(6))
 
 	# 레이어별 컬럼
@@ -87,8 +95,7 @@ func _ready() -> void:
 			get_tree().reload_current_scene()))
 	elif done:
 		btns.add_child(_btn("처음부터 (회복)", Color(0.6, 0.45, 0.95), func():
-			GameState.region_idx = 0
-			GameState.reset_run()
+			GameState.new_run()
 			get_tree().reload_current_scene()))
 	btns.add_child(_btn("영혼 편성", Color(0.5, 0.62, 0.95), func(): get_tree().change_scene_to_file("res://scenes/ui/party.tscn")))
 	btns.add_child(_btn("증언의 서", Color(0.62, 0.55, 0.78), func(): get_tree().change_scene_to_file("res://scenes/ui/codex.tscn")))

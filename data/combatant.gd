@@ -17,6 +17,7 @@ var lore := ""  # 거둘 때 해금되는 '증언'(적 수집용)
 
 # 상태(턴 단위로 감소/소비)
 var shield := 0          # 흡수량(소비될 때까지 유지)
+var dmg_reduce := 0      # 받는 피해 경감(강철 피부 유물)
 var vulnerable := 0      # 취약 남은 턴(받는 피해 ↑)
 var taunt := 0           # 도발 남은 턴(적이 이 유닛을 우선 노림)
 var cd := 0              # 고유기술 쿨다운 남은 턴
@@ -39,6 +40,8 @@ func take_damage(raw: int, apply_vuln := true) -> int:
 	var dmg := raw
 	if apply_vuln and vulnerable > 0:
 		dmg = int(round(dmg * VULN_MULT))
+	if dmg > 0 and dmg_reduce > 0:
+		dmg = maxi(1, dmg - dmg_reduce)  # 경감(최소 1 — 무적 방지)
 	if shield > 0:
 		var absorbed := mini(shield, dmg)
 		shield -= absorbed
