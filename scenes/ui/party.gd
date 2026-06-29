@@ -124,7 +124,8 @@ func _roster_card(idx: int) -> Control:
 	var cur := int(e.get("hp", mhp))
 	box.add_child(_wrap("HP %d/%d · 공격 %d" % [cur, mhp, d.atk + int(e.level) - 1], 13, Color(0.6, 0.62, 0.72), W))
 	box.add_child(_hp_gauge(cur, mhp, W))
-	box.add_child(_wrap(d.skill + " — " + d.desc, 13, Color(0.62, 0.6, 0.72), W))
+	box.add_child(_wrap("[기술] " + d.skill + " — " + d.desc, 13, Color(0.62, 0.6, 0.72), W))
+	box.add_child(_wrap("[패시브] " + d.passive + " — " + d.passive_desc, 13, Color(0.8, 0.74, 0.5), W))
 	var lore := _wrap(e.lore, 12, Color(0.5, 0.48, 0.6), W)
 	lore.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	box.add_child(lore)

@@ -75,10 +75,11 @@ func _build_ui() -> void:
 	enemies_box.offset_top = 54; enemies_box.offset_bottom = 224
 	add_child(enemies_box)
 
-	# 전투 로그(적/아군 행 사이 중앙 밴드)
-	log_label = _mk_label("", 17, Color(0.7, 0.68, 0.8))
+	# 전투 로그(적/아군 행 사이 중앙 밴드) — 잘 보이게 크게
+	log_label = _mk_label("", 21, Color(0.88, 0.86, 0.96))
 	log_label.set_anchors_and_offsets_preset(Control.PRESET_TOP_WIDE)
-	log_label.offset_top = 240; log_label.offset_bottom = 348
+	log_label.offset_top = 230; log_label.offset_bottom = 356
+	log_label.add_theme_constant_override("line_spacing", 4)
 	log_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	log_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	add_child(log_label)
@@ -149,14 +150,20 @@ func _start_battle() -> void:
 		var ec := _enemy_soul(e.name, e.job, e.lore, e.hp, e.atk)
 		ec.cd = 1 + enemies.size()  # 고유기 첫 사용을 스태거(1마리씩 시차)
 		enemies.append(ec)
-	# 유물 효과(전투 시작)
+	# 유물 효과 + 패시브(전투 시작)
+	var has_chrono := false
 	for a in allies:
 		if GameState.has_relic("vigor"): a.atk += 2
 		if GameState.has_relic("vital"): a.shield += 10
 		if GameState.has_relic("armor"): a.dmg_reduce += 1
+		if a.job == Jobs.KNIGHT: a.dmg_reduce += 1  # 불굴
+		if a.job == Jobs.CHRONO: has_chrono = true
 	if GameState.has_relic("radiance"):
 		for e in enemies:
 			e.vulnerable = 1
+	if has_chrono:  # 시간 왜곡: 적 고유기 1턴 지연
+		for e in enemies:
+			e.cd += 1
 	round_no = 1
 	busy = false
 	show_tip = GameState.story_fragments.is_empty()  # 아직 한 번도 안 거뒀으면 첫 전투
@@ -185,6 +192,10 @@ func _start_round() -> void:
 		for a in allies:
 			if a.alive():
 				a.heal(3)
+	for a in allies:  # 치유사 패시브: 생명의 가호
+		if a.alive() and a.job == Jobs.MENDER:
+			var low := _lowest_living(allies)
+			if low: low.heal(4)
 	pending = []
 	for a in allies:
 		if a.alive():
@@ -225,10 +236,21 @@ func _on_target(enemy: Combatant) -> void:
 	busy = false
 
 # ── 행동 처리(연출 포함) ─────────────────────────────────────────
+## 광폭화(광전사): HP 절반 이하면 공격 +3.
+func _atk_bonus(c: Combatant) -> int:
+	return 3 if c.job == Jobs.BERSERKER and c.hp * 2 <= c.max_hp else 0
+
+## 사냥꾼(처형인): 체력 40% 이하 적에게 피해 배수.
+func _hunter(actor_c: Combatant, target: Combatant) -> float:
+	return 1.5 if actor_c.job == Jobs.HEADSMAN and target.hp * 5 <= target.max_hp * 2 else 1.0
+
 func _resolve(target: Combatant) -> void:
 	await _lunge(actor)
 	if action == "atk":
-		var dealt := target.take_damage(actor.atk)
+		var raw := int(round((actor.atk + _atk_bonus(actor)) * _hunter(actor, target)))
+		var dealt := target.take_damage(raw)
+		if actor.job == Jobs.PLAGUE and target.alive():  # 맹독: 기본 공격도 취약
+			target.vulnerable = maxi(target.vulnerable, 1)
 		_log("%s ▸ %s 공격, %d 피해%s" % [actor.display_name, target.display_name, dealt, _kill(target)])
 		await _hit(target, "-%d" % dealt, Color(1, 0.5, 0.45), false)
 	else:
@@ -252,6 +274,7 @@ func _resolve_skill(target: Combatant) -> void:
 		Jobs.HEADSMAN:
 			var crit := target.vulnerable > 0
 			var raw := HEADSMAN_DMG * 2 if crit else HEADSMAN_DMG
+			raw = int(round(raw * _hunter(actor, target)))  # 사냥꾼 패시브
 			var dealt := target.take_damage(raw, false)  # 치명타는 이미 반영, 취약 중복 ×1.5 방지
 			var tag := " 치명타!" if crit else ""
 			if crit:
@@ -260,9 +283,10 @@ func _resolve_skill(target: Combatant) -> void:
 			await _hit(target, ("-%d 치명!" % dealt) if crit else "-%d" % dealt, Color(1, 0.85, 0.3) if crit else Color(1, 0.5, 0.45), crit)
 		Jobs.BERSERKER:
 			var hits: Array[String] = []
+			var aoe := BERSERK_DMG + _atk_bonus(actor)  # 광폭화 반영
 			for e in enemies:
 				if e.alive():
-					var dd := e.take_damage(BERSERK_DMG)
+					var dd := e.take_damage(aoe)
 					hits.append("%s %d%s" % [e.display_name, dd, _kill(e)])
 					await _hit(e, "-%d" % dd, Color(1, 0.55, 0.25), false)
 			actor.take_damage(BERSERK_RECOIL, false)  # 자해 반동(취약 무관)
@@ -554,7 +578,7 @@ func _refresh() -> void:
 	for a in allies:
 		allies_box.add_child(_unit_card(a, ally_pick and pending.has(a), _on_actor))
 
-	log_label.text = "\n".join(log_lines.slice(maxi(0, log_lines.size() - 5)))
+	log_label.text = "\n".join(log_lines.slice(maxi(0, log_lines.size() - 4)))
 	_set_banner()
 
 	match phase:
