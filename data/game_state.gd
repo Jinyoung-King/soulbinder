@@ -1,7 +1,7 @@
 extends Node
 ## 전역 상태(오토로드). 버전 + 거둔 영혼 로스터/사연(전투 사이 영구 보존).
 
-const VERSION := "v0.8"  ## 빌드 버전(타이틀 표기) — 빌드마다 올릴 것
+const VERSION := "v0.9"  ## 빌드 버전(타이틀 표기) — 빌드마다 올릴 것
 
 const PARTY_MAX := 3  ## 출전 팀 최대 인원
 
@@ -11,8 +11,23 @@ var roster: Array[Dictionary] = []
 var party: Array[int] = []
 ## 거두며 해금한 '그날 밤의 증언' 조각.
 var story_fragments: Array[String] = []
-## 지역 진행 위치(= 다음에 플레이할 노드 인덱스). 승리 시 증가.
-var region_node := 0
+
+## ── 분기 런 진행 ──
+var run_pos: String = ""           # 현재 위치 노드 id("" = 런 시작)
+var run_cleared: Array[String] = []  # 클리어한 노드 id
+var cur_node: String = ""          # 진입한 전투 노드(battle 씬이 읽음)
+
+## 런 처음부터 다시(로스터·레벨은 유지 = NG+식).
+func reset_run() -> void:
+	run_pos = ""
+	run_cleared = []
+	cur_node = ""
+
+## 출전 팀 전원 레벨 +n (휴식·정예 보상).
+func level_party(n: int) -> void:
+	for idx in party:
+		if idx >= 0 and idx < roster.size():
+			roster[idx].level += n
 
 func _ready() -> void:
 	if roster.is_empty():

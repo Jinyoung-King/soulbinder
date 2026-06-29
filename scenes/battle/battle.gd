@@ -31,6 +31,7 @@ var actor: Combatant = null           # 선택된 행동 주체
 var action: String = ""               # "atk" | "skill"
 var round_no := 1
 var log_lines: Array[String] = []
+var node_type := "battle"             # 현재 노드 타입(elite 보상 판정)
 var busy := false                     # 연출 재생 중 입력 무시
 var show_tip := false                 # 첫 전투 콤보 안내
 var card_of: Dictionary = {}          # Combatant → 카드 노드(연출 위치용)
@@ -109,8 +110,11 @@ func _start_battle() -> void:
 		if idx >= 0 and idx < GameState.roster.size():
 			allies.append(_ally(GameState.roster[idx]))
 			ally_src.append(idx)
-	# 적 = 현재 노드의 인카운터(거둘 수 있는 영혼: 직업·사연 보유)
-	var node := Encounters.get_node(GameState.region_node)
+	# 적 = 현재 진입 노드의 인카운터(거둘 수 있는 영혼: 직업·사연 보유)
+	if GameState.cur_node == "":
+		GameState.cur_node = RunMap.ENTRY
+	var node := RunMap.node(GameState.cur_node)
+	node_type = node.type
 	enemies = []
 	for e in node.enemies:
 		enemies.append(_enemy_soul(e.name, e.job, e.lore, e.hp, e.atk))
@@ -285,7 +289,13 @@ func _all_dead(arr: Array[Combatant]) -> bool:
 func _end_battle(won: bool) -> void:
 	if won:
 		_apply_levelups()
-		GameState.region_node += 1  # 노드 클리어 → 다음 노드 해금
+		# 노드 클리어 → 위치 갱신
+		GameState.run_pos = GameState.cur_node
+		if not GameState.run_cleared.has(GameState.cur_node):
+			GameState.run_cleared.append(GameState.cur_node)
+		if node_type == "elite":
+			GameState.level_party(RunMap.ELITE_BONUS)  # 정예 보상: 팀 추가 레벨
+			_log("정예 격파 보상 ▸ 출전 팀 전원 +%d 레벨" % RunMap.ELITE_BONUS)
 		phase = Phase.COLLECT
 		_log("승리! 쓰러진 영혼 중 하나를 거둘 수 있다.")
 	else:
