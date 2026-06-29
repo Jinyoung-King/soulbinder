@@ -4,7 +4,7 @@
 // Incrementing CACHE_VERSION will kick off the install event and force
 // previously cached resources to be updated from the network.
 /** @type {string} */
-const CACHE_VERSION = '1782744844|2696814';
+const CACHE_VERSION = '1782750137|2707960';
 /** @type {string} */
 const CACHE_PREFIX = 'soulbinder-sw-cache-';
 const CACHE_NAME = CACHE_PREFIX + CACHE_VERSION;
