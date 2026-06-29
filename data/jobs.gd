@@ -9,6 +9,7 @@ const PLAGUE := "plague"      # 독술사 — 취약 표식을 거는 셋업
 const HEADSMAN := "headsman"  # 처형인 — 취약 대상에 치명타(피니셔)
 const BERSERKER := "berserker"  # 광전사 — 광역 청소(자해 반동). 단일 폭딜과의 조합 갈림
 const MENDER := "mender"  # 치유사 — 지속(회복). 어트리션 완화 → 휴식 대신 정예 버티기 전략
+const CHRONO := "chrono"  # 시간술사 — 가속(아군 추가 행동). 콤보 증폭(같은 라운드 두 번 때리기)
 
 ## 직업별 정의. hp/atk=기본 스탯, skill=고유기술 메타.
 const TABLE := {
@@ -41,6 +42,12 @@ const TABLE := {
 		"hp": 34, "atk": 5,
 		"skill": "치유의 빛", "desc": "가장 약한 아군의 체력을 회복",
 		"cd": 2, "needs_target": false,
+	},
+	CHRONO: {
+		"name": "시간술사", "color": Color(0.62, 0.68, 1.0),
+		"hp": 32, "atk": 6,
+		"skill": "가속", "desc": "아군 하나가 이번 라운드에 한 번 더 행동",
+		"cd": 3, "needs_target": false,
 	},
 }
 

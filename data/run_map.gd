@@ -17,6 +17,7 @@ const POOLS := [
 		{"name": "피에 굶주린 광인", "job": Jobs.BERSERKER, "hp": 44, "atk": 8, "lore": "복수를 외치다 제 편마저 베고 미쳐 버린 검사."},
 		{"name": "방랑하는 망령", "job": Jobs.HEADSMAN, "hp": 40, "atk": 8, "lore": "거리를 떠돌며 산 자의 목을 노린다."},
 		{"name": "떠도는 치유사", "job": Jobs.MENDER, "hp": 38, "atk": 6, "lore": "죽은 자를 억지로 일으켜 세우려 했다."},
+		{"name": "뒤틀린 시계공", "job": Jobs.CHRONO, "hp": 34, "atk": 6, "lore": "시간을 되돌리려다 자신만 그 순간에 갇혔다."},
 	],
 	[  # 2장 · 왕궁 심층 (강한 티어)
 		{"name": "배신한 친위병", "job": Jobs.KNIGHT, "hp": 52, "atk": 9, "lore": "왕을 지키라는 칼로 왕의 등을 노렸다."},
@@ -24,6 +25,7 @@ const POOLS := [
 		{"name": "광란의 검사", "job": Jobs.BERSERKER, "hp": 60, "atk": 10, "lore": "충성도 광기도 같은 칼끝이었다."},
 		{"name": "처형인의 망령", "job": Jobs.HEADSMAN, "hp": 56, "atk": 10, "lore": "그날 밤 가장 많은 목을 친 칼."},
 		{"name": "피의 사제", "job": Jobs.MENDER, "hp": 58, "atk": 8, "lore": "산 자의 피로 죽은 자를 일으켜 세웠다."},
+		{"name": "옥좌의 시계공", "job": Jobs.CHRONO, "hp": 50, "atk": 8, "lore": "왕의 시간마저 멈추려 했던 궁정 마도사."},
 	],
 ]
 

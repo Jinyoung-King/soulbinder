@@ -257,6 +257,12 @@ func _resolve_skill(target: Combatant) -> void:
 				var h := t.heal(HEAL_AMT)
 				_log("%s ▸ 치유의 빛! %s 체력 +%d" % [actor.display_name, t.display_name, h])
 				await _hit(t, "+%d" % h, Color(0.5, 0.95, 0.7), false)
+		Jobs.CHRONO:
+			var t := _best_other_ally(actor)  # 가장 센 다른 아군에게 추가 행동
+			if t:
+				pending.append(t)  # 이번 라운드 한 번 더 행동
+				_log("%s ▸ 가속! %s가 한 번 더 행동한다" % [actor.display_name, t.display_name])
+				await _hit(t, "+행동", Color(0.62, 0.68, 1.0), false)
 		_:
 			pass
 
@@ -343,6 +349,15 @@ func _enemy_skill(e: Combatant) -> void:
 				var h := t.heal(ENEMY_HEAL)
 				_log("%s ▸ 치유! %s 체력 +%d" % [e.display_name, t.display_name, h])
 				await _hit(t, "+%d" % h, Color(0.5, 0.95, 0.7), false)
+		Jobs.CHRONO:  # 적 시간술사: 연속 공격(추가 행동을 2연타로 표현)
+			var t := _enemy_target()
+			if t:
+				var d1 := t.take_damage(e.atk)
+				_log("%s ▸ 시간 가속! %s에 연속 공격 (%d)%s" % [e.display_name, t.display_name, d1, _kill(t)])
+				await _hit(t, "-%d" % d1, Color(0.7, 0.75, 1.0), false)
+				if t.alive():
+					var d2 := t.take_damage(e.atk)
+					await _hit(t, "-%d" % d2, Color(0.7, 0.75, 1.0), false)
 		_:
 			pass
 
@@ -358,6 +373,14 @@ func _enemy_target() -> Combatant:
 		if weakest == null or a.hp < weakest.hp:
 			weakest = a
 	return taunter if taunter != null else weakest
+
+## 자신을 제외한, 공격력이 가장 높은 살아있는 아군(가속 대상).
+func _best_other_ally(self_c: Combatant) -> Combatant:
+	var best: Combatant = null
+	for a in allies:
+		if a.alive() and a != self_c and (best == null or a.atk > best.atk):
+			best = a
+	return best
 
 ## 살아있는 것 중 HP 최저(치유 대상).
 func _lowest_living(arr: Array[Combatant]) -> Combatant:

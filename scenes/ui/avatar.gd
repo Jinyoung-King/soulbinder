@@ -34,6 +34,12 @@ func _draw() -> void:
 			var w := maxf(2.0, r * 0.22)
 			draw_rect(Rect2(c - Vector2(t, w * 0.5), Vector2(t * 2, w)), line)
 			draw_rect(Rect2(c - Vector2(w * 0.5, t), Vector2(w, t * 2)), line)
+		Jobs.CHRONO:  # 육각형(시간/톱니)
+			var hex := []
+			for i in 6:
+				var a := PI / 6.0 + float(i) * PI / 3.0
+				hex.append(c + Vector2(cos(a), sin(a)) * r)
+			_poly(hex, line)
 		_:  # 기본=원
 			draw_circle(c, r, col)
 			draw_arc(c, r, 0, TAU, 24, line, 2.0)
