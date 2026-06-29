@@ -111,7 +111,13 @@ func _roster_card(idx: int) -> Control:
 	box.custom_minimum_size = Vector2(W - 24, 0)
 	card.add_child(box)
 
-	box.add_child(_wrap("%s%s" % [e.name, ("   ▸ 출전 %d" % (order + 1)) if picked else ""], 19, Color.WHITE if picked else Color(0.82, 0.82, 0.88), W))
+	var header := HBoxContainer.new()
+	header.add_theme_constant_override("separation", 8)
+	header.add_child(Avatar.new().setup(e.job, d.color if picked else d.color.darkened(0.15), 34))
+	var nm := _label("%s%s" % [e.name, ("   ▸ 출전 %d" % (order + 1)) if picked else ""], 19, Color.WHITE if picked else Color(0.82, 0.82, 0.88))
+	nm.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	header.add_child(nm)
+	box.add_child(header)
 	box.add_child(_wrap("%s · Lv %d" % [d.name, e.level], 14, d.color.lightened(0.1), W))
 	box.add_child(_exp_gauge(int(e.get("exp", 0)), GameState.exp_need(int(e.level)), d.color, W))
 	var mhp := GameState.max_hp(e)

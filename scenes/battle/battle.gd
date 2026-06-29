@@ -405,8 +405,14 @@ func _hit(c: Combatant, text: String, color: Color, big: bool) -> void:
 		return
 	await get_tree().process_frame  # 카드 레이아웃 확정 후 위치 읽기
 	var center := card.global_position + card.size * 0.5
-	# 카드 번쩍(밝게 → 원복)
+	# 카드 번쩍(밝게 → 원복) + 흔들림(피격 손맛)
 	card.modulate = Color(1.5, 1.4, 1.4)
+	var base := card.position
+	var shake := create_tween()
+	shake.tween_property(card, "position", base + Vector2(7, 0), 0.04)
+	shake.tween_property(card, "position", base - Vector2(6, 0), 0.04)
+	shake.tween_property(card, "position", base + Vector2(3, 0), 0.04)
+	shake.tween_property(card, "position", base, 0.04)
 	# 떠오르는 숫자
 	var lbl := _mk_label(text, 34 if big else 26, color)
 	lbl.z_index = 100
@@ -501,8 +507,14 @@ func _unit_card(c: Combatant, clickable: bool, onclick: Callable) -> Control:
 	card.add_child(box)
 
 	var dead := not c.alive()
+	var header := HBoxContainer.new()
+	header.add_theme_constant_override("separation", 8)
+	header.add_child(Avatar.new().setup(c.job, accent, 38))
 	var title := c.display_name + ("  Lv%d" % c.level if not c.is_enemy else "")
-	box.add_child(_mk_label(title, 18, Color.WHITE if not dead else Color(0.45, 0.45, 0.5)))
+	var name_l := _mk_label(title, 18, Color.WHITE if not dead else Color(0.45, 0.45, 0.5))
+	name_l.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	header.add_child(name_l)
+	box.add_child(header)
 
 	var bar := ProgressBar.new()
 	bar.max_value = c.max_hp
