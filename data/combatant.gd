@@ -46,6 +46,12 @@ func take_damage(raw: int, apply_vuln := true) -> int:
 	hp = maxi(0, hp - dmg)
 	return dmg
 
+## 회복(최대 HP까지). 실제 회복량 반환(로그용).
+func heal(amount: int) -> int:
+	var before := hp
+	hp = mini(max_hp, hp + amount)
+	return hp - before
+
 ## 라운드 종료 시 상태 1턴 감소(보호막은 소비 전까지 유지).
 func tick() -> void:
 	vulnerable = maxi(0, vulnerable - 1)

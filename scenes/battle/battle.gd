@@ -14,6 +14,8 @@ const PLAGUE_DMG := 4       # 표식의 소량 피해
 const HEADSMAN_DMG := 16    # 단두 기본 피해(취약 대상엔 ×2). 표식+단두 콤보로 잡몹 1사이클 처치
 const BERSERK_DMG := 11     # 광란: 모든 적에게 입히는 피해(취약 시 ×1.5 적용)
 const BERSERK_RECOIL := 5   # 광란 자해 반동
+const HEAL_AMT := 18        # 치유의 빛 회복량(아군)
+const ENEMY_HEAL := 14      # 적 치유사 회복량
 
 const FX_HIT := 0.55        # 피격 연출 길이
 const STEP := 0.45          # 적 행동 사이 텀(하나씩 보이게)
@@ -225,6 +227,12 @@ func _resolve_skill(target: Combatant) -> void:
 			actor.take_damage(BERSERK_RECOIL, false)  # 자해 반동(취약 무관)
 			_log("%s ▸ 광란! 적 전체 — %s | 반동 %d" % [actor.display_name, ", ".join(hits), BERSERK_RECOIL])
 			await _hit(actor, "반동 -%d" % BERSERK_RECOIL, Color(0.9, 0.5, 0.5), false)
+		Jobs.MENDER:
+			var t := _lowest_living(allies)
+			if t:
+				var h := t.heal(HEAL_AMT)
+				_log("%s ▸ 치유의 빛! %s 체력 +%d" % [actor.display_name, t.display_name, h])
+				await _hit(t, "+%d" % h, Color(0.5, 0.95, 0.7), false)
 		_:
 			pass
 
@@ -302,6 +310,12 @@ func _enemy_skill(e: Combatant) -> void:
 			e.shield += 15
 			_log("%s ▸ 방어 태세! 보호막 15" % e.display_name)
 			await _hit(e, "방패+15", Color(0.55, 0.75, 1.0), false)
+		Jobs.MENDER:  # 적 치유사: 아군(적 진영) 회복 → 먼저 잡아야 하는 위협
+			var t := _lowest_living(enemies)
+			if t:
+				var h := t.heal(ENEMY_HEAL)
+				_log("%s ▸ 치유! %s 체력 +%d" % [e.display_name, t.display_name, h])
+				await _hit(t, "+%d" % h, Color(0.5, 0.95, 0.7), false)
 		_:
 			pass
 
@@ -317,6 +331,14 @@ func _enemy_target() -> Combatant:
 		if weakest == null or a.hp < weakest.hp:
 			weakest = a
 	return taunter if taunter != null else weakest
+
+## 살아있는 것 중 HP 최저(치유 대상).
+func _lowest_living(arr: Array[Combatant]) -> Combatant:
+	var best: Combatant = null
+	for c in arr:
+		if c.alive() and (best == null or c.hp < best.hp):
+			best = c
+	return best
 
 func _all_dead(arr: Array[Combatant]) -> bool:
 	for c in arr:

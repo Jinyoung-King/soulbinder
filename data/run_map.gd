@@ -35,9 +35,9 @@ const NODES := {
 	"n4": {"type": "elite", "name": "정예 · 광신 집단", "layer": 3, "next": ["n6"],
 		"intro": "정예. 거짓 신탁에 미친 광신도들이 달려든다.",
 		"enemies": [
-			{"name": "광신 사제", "job": Jobs.PLAGUE, "hp": 46, "atk": 8, "lore": "신께 빌다 신을 저주하며 죽었다."},
+			{"name": "광신 치유사", "job": Jobs.MENDER, "hp": 40, "atk": 6, "lore": "거짓 기적으로 죽어가는 자들을 억지로 붙들어 두었다."},
 			{"name": "신전 광신도", "job": Jobs.BERSERKER, "hp": 52, "atk": 9, "lore": "거짓 신탁을 외치며 칼을 휘둘렀다."},
-			{"name": "신전 광신도", "job": Jobs.BERSERKER, "hp": 50, "atk": 9, "lore": "마지막까지 헛된 기도를 멈추지 않았다."},
+			{"name": "광신 사제", "job": Jobs.PLAGUE, "hp": 46, "atk": 8, "lore": "신께 빌다 신을 저주하며 죽었다."},
 		]},
 	"n5": {"type": "rest", "name": "폐사당", "layer": 3, "next": ["n6"],
 		"intro": "버려진 사당에서 숨을 고른다."},
