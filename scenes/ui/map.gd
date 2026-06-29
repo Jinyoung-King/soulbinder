@@ -29,6 +29,17 @@ func _ready() -> void:
 	sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	v.add_child(sub)
 
+	# 출전 팀 HP 상태(휴식 결정용)
+	var status: Array[String] = []
+	for idx in GameState.party:
+		if idx >= 0 and idx < GameState.roster.size():
+			var e: Dictionary = GameState.roster[idx]
+			status.append("%s %d/%d" % [e.name, int(e.get("hp", 0)), GameState.max_hp(e)])
+	if not status.is_empty():
+		var hp := _label("출전 팀  ·  " + "   ".join(status), 15, Color(0.7, 0.62, 0.6))
+		hp.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		v.add_child(hp)
+
 	v.add_child(_sep(6))
 
 	# 레이어별 컬럼
@@ -86,7 +97,7 @@ func _node_card(id: String, reach: Array) -> Control:
 	match n.type:
 		"battle": info = "전투 · 적 %d" % n.enemies.size()
 		"elite": info = "정예 · 적 %d · 보상 +%dLv" % [n.enemies.size(), RunMap.ELITE_BONUS]
-		"rest": info = "휴식 · 팀 +%dLv (전투 없음)" % RunMap.REST_LEVELS
+		"rest": info = "휴식 · 팀 회복 + %dLv" % RunMap.REST_LEVELS
 		"boss": info = "보스 · 적 %d" % n.enemies.size()
 
 	var card := PanelContainer.new()
@@ -117,6 +128,7 @@ func _type_col(t: String) -> Color:
 func _enter(id: String) -> void:
 	var n := RunMap.node(id)
 	if n.type == "rest":
+		GameState.heal_party()  # 전투 사이 회복 — 휴식의 핵심 가치
 		GameState.level_party(RunMap.REST_LEVELS)
 		GameState.run_pos = id
 		if not GameState.run_cleared.has(id):

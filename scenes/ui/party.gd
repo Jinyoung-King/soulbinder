@@ -114,7 +114,10 @@ func _roster_card(idx: int) -> Control:
 	box.add_child(_wrap("%s%s" % [e.name, ("   ▸ 출전 %d" % (order + 1)) if picked else ""], 19, Color.WHITE if picked else Color(0.82, 0.82, 0.88), W))
 	box.add_child(_wrap("%s · Lv %d" % [d.name, e.level], 14, d.color.lightened(0.1), W))
 	box.add_child(_exp_gauge(int(e.get("exp", 0)), GameState.exp_need(int(e.level)), d.color, W))
-	box.add_child(_wrap("HP %d / 공격 %d" % [d.hp + (int(e.level) - 1) * 5, d.atk + int(e.level) - 1], 13, Color(0.6, 0.62, 0.72), W))
+	var mhp := GameState.max_hp(e)
+	var cur := int(e.get("hp", mhp))
+	box.add_child(_wrap("HP %d/%d · 공격 %d" % [cur, mhp, d.atk + int(e.level) - 1], 13, Color(0.6, 0.62, 0.72), W))
+	box.add_child(_hp_gauge(cur, mhp, W))
 	box.add_child(_wrap(d.skill + " — " + d.desc, 13, Color(0.62, 0.6, 0.72), W))
 	var lore := _wrap(e.lore, 12, Color(0.5, 0.48, 0.6), W)
 	lore.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -165,6 +168,24 @@ func _btn(text: String, accent: Color, cb: Callable) -> Button:
 	UIKit.style_button(b, accent)
 	b.pressed.connect(cb)
 	return b
+
+## HP 게이지(누적 피해 한눈에 — 회복 결정용).
+func _hp_gauge(cur: int, mx: int, width: int) -> ProgressBar:
+	var bar := ProgressBar.new()
+	bar.max_value = maxi(1, mx)
+	bar.value = cur
+	bar.show_percentage = false
+	bar.custom_minimum_size = Vector2(width - 24, 7)
+	var bg := StyleBoxFlat.new()
+	bg.bg_color = Color(0.2, 0.2, 0.26, 0.8)
+	bg.set_corner_radius_all(3)
+	bar.add_theme_stylebox_override("background", bg)
+	var fill := StyleBoxFlat.new()
+	var ratio := float(cur) / float(maxi(1, mx))
+	fill.bg_color = Color(0.85, 0.35, 0.35) if ratio < 0.34 else (Color(0.9, 0.75, 0.35) if ratio < 0.67 else Color(0.5, 0.78, 0.45))
+	fill.set_corner_radius_all(3)
+	bar.add_theme_stylebox_override("fill", fill)
+	return bar
 
 ## EXP 게이지(수치 없이 막대로만).
 func _exp_gauge(cur: int, need: int, col: Color, width: int) -> ProgressBar:

@@ -133,7 +133,9 @@ func _start_battle() -> void:
 func _ally(entry: Dictionary) -> Combatant:
 	var d := Jobs.get_def(entry.job)
 	var lvl := int(entry.level)
-	var c := Combatant.new(entry.name, entry.job, d.color, d.hp + (lvl - 1) * 5, d.atk + (lvl - 1), false)
+	var mhp := GameState.max_hp(entry)
+	var c := Combatant.new(entry.name, entry.job, d.color, mhp, d.atk + (lvl - 1), false)
+	c.hp = clampi(int(entry.get("hp", mhp)), 1, mhp)  # 누적 피해 유지(최소 1로 진입)
 	c.level = lvl
 	return c
 
@@ -324,6 +326,7 @@ func _all_dead(arr: Array[Combatant]) -> bool:
 
 func _end_battle(won: bool) -> void:
 	if won:
+		_persist_party_hp()  # 전투 종료 HP를 로스터에 기록(어트리션) + 탈진자 허약 부활
 		_apply_levelups()
 		# 노드 클리어 → 위치 갱신
 		GameState.run_pos = GameState.cur_node
@@ -338,6 +341,17 @@ func _end_battle(won: bool) -> void:
 		phase = Phase.RESULT
 		_log("패배… 강령술사도 쓰러졌다.")
 	_refresh()
+
+## 전투 종료 HP를 로스터에 기록. 쓰러진(탈진) 영혼은 최대 25%로 허약 부활.
+func _persist_party_hp() -> void:
+	for i in allies.size():
+		if i < ally_src.size():
+			var ri := ally_src[i]
+			var mhp := GameState.max_hp(GameState.roster[ri])
+			var h := allies[i].hp
+			if h <= 0:
+				h = int(ceil(mhp * 0.25))
+			GameState.roster[ri]["hp"] = clampi(h, 1, mhp)
 
 ## 생존한 참전 영혼 경험치 획득 + 레벨업 — 영구 보존.
 func _apply_levelups() -> void:
@@ -434,7 +448,10 @@ func _refresh() -> void:
 				_add_action_btn("지도로", Color(0.6, 0.45, 0.95), func(): get_tree().change_scene_to_file("res://scenes/ui/map.tscn"))
 				_add_action_btn("팀 편성", Color(0.5, 0.62, 0.95), func(): get_tree().change_scene_to_file("res://scenes/ui/party.tscn"))
 			else:
-				_add_action_btn("다시 전투", Color(0.6, 0.45, 0.95), func(): _start_battle())
+				# 전멸 = 런 실패. 처음부터(전원 회복)로.
+				_add_action_btn("처음부터 (회복)", Color(0.6, 0.45, 0.95), func():
+					GameState.reset_run()
+					get_tree().change_scene_to_file("res://scenes/ui/map.tscn"))
 			_add_action_btn("타이틀로", Color(0.5, 0.5, 0.58), func(): get_tree().change_scene_to_file("res://scenes/ui/title.tscn"))
 
 func _set_banner() -> void:

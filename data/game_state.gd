@@ -1,7 +1,7 @@
 extends Node
 ## 전역 상태(오토로드). 버전 + 거둔 영혼 로스터/사연(전투 사이 영구 보존).
 
-const VERSION := "v0.11"  ## 빌드 버전(타이틀 표기) — 빌드마다 올릴 것
+const VERSION := "v0.12"  ## 빌드 버전(타이틀 표기) — 빌드마다 올릴 것
 
 const PARTY_MAX := 3  ## 출전 팀 최대 인원
 const EXP_PER_ENEMY := 3  ## 전투 승리 시 생존 영혼이 적 1체당 얻는 경험치
@@ -18,17 +18,31 @@ var run_pos: String = ""           # 현재 위치 노드 id("" = 런 시작)
 var run_cleared: Array[String] = []  # 클리어한 노드 id
 var cur_node: String = ""          # 진입한 전투 노드(battle 씬이 읽음)
 
-## 런 처음부터 다시(로스터·레벨은 유지 = NG+식).
+## 런 처음부터 다시(로스터·레벨은 유지 = NG+식). 전원 풀피 회복.
 func reset_run() -> void:
 	run_pos = ""
 	run_cleared = []
 	cur_node = ""
+	for e in roster:
+		e["hp"] = max_hp(e)
 
-## 출전 팀 전원 레벨 +n (휴식·정예 보상).
+## 레벨 기준 최대 HP.
+func max_hp(entry: Dictionary) -> int:
+	return Jobs.get_def(entry.job).hp + (int(entry.level) - 1) * 5
+
+## 출전 팀 전원 레벨 +n (휴식·정예 보상). 레벨업분만큼 HP도 가산.
 func level_party(n: int) -> void:
 	for idx in party:
 		if idx >= 0 and idx < roster.size():
-			roster[idx].level += n
+			var e: Dictionary = roster[idx]
+			e["level"] = int(e.level) + n
+			e["hp"] = mini(int(e.get("hp", 0)) + 5 * n, max_hp(e))
+
+## 출전 팀 전원 완전 회복(휴식).
+func heal_party() -> void:
+	for idx in party:
+		if idx >= 0 and idx < roster.size():
+			roster[idx]["hp"] = max_hp(roster[idx])
 
 func _ready() -> void:
 	if roster.is_empty():
@@ -38,11 +52,14 @@ func _ready() -> void:
 			{"job": Jobs.HEADSMAN, "name": "처형인", "lore": "마지막 명령으로 동료의 목을 친 뒤 스스로 무너진 형리.", "level": 1, "exp": 0},
 		]
 		party = [0, 1, 2]
+		for e in roster:
+			e["hp"] = max_hp(e)  # 시작은 풀피
 
 ## 영혼을 로스터에 추가 + 사연 조각 해금.
 func bind_soul(entry: Dictionary) -> void:
 	if not entry.has("exp"):
 		entry["exp"] = 0
+	entry["hp"] = max_hp(entry)  # 새로 거둔 영혼은 풀피(교체용 새 몸)
 	roster.append(entry)
 	if entry.has("lore") and entry.lore != "":
 		story_fragments.append(entry.lore)
@@ -59,5 +76,6 @@ func grant_exp(idx: int, amount: int) -> int:
 	while int(e.exp) >= exp_need(int(e.level)):
 		e["exp"] = int(e.exp) - exp_need(int(e.level))
 		e["level"] = int(e.level) + 1
+		e["hp"] = mini(int(e.get("hp", 0)) + 5, max_hp(e))  # 레벨업 시 소폭 회복
 		gained += 1
 	return gained
