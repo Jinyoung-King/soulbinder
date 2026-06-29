@@ -17,6 +17,7 @@ const BERSERK_RECOIL := 5   # 광란 자해 반동
 
 const FX_HIT := 0.55        # 피격 연출 길이
 const STEP := 0.45          # 적 행동 사이 텀(하나씩 보이게)
+const ENEMY_SKILL_CD := 2   # 적 고유기 재사용 쿨다운
 
 enum Phase { SELECT_ACTOR, SELECT_ACTION, SELECT_TARGET, ENEMY, COLLECT, RESULT }
 
@@ -117,7 +118,9 @@ func _start_battle() -> void:
 	node_type = node.type
 	enemies = []
 	for e in node.enemies:
-		enemies.append(_enemy_soul(e.name, e.job, e.lore, e.hp, e.atk))
+		var ec := _enemy_soul(e.name, e.job, e.lore, e.hp, e.atk)
+		ec.cd = 1 + enemies.size()  # 고유기 첫 사용을 스태거(1마리씩 시차)
+		enemies.append(ec)
 	round_no = 1
 	busy = false
 	show_tip = GameState.story_fragments.is_empty()  # 아직 한 번도 안 거뒀으면 첫 전투
@@ -247,13 +250,19 @@ func _enemy_phase() -> void:
 	for e in enemies:
 		if not e.alive():
 			continue
-		var target := _enemy_target()
-		if target == null:
-			break
-		var dealt := target.take_damage(e.atk)
-		_log("%s ▸ %s 공격, %d 피해%s" % [e.display_name, target.display_name, dealt, _kill(target)])
-		await _hit(target, "-%d" % dealt, Color(1, 0.45, 0.4), false)
+		if e.cd == 0:
+			await _enemy_skill(e)  # 고유기(쿨다운 0)
+			e.cd = ENEMY_SKILL_CD
+		else:
+			var target := _enemy_target()
+			if target == null:
+				break
+			var dealt := target.take_damage(e.atk)
+			_log("%s ▸ %s 공격, %d 피해%s" % [e.display_name, target.display_name, dealt, _kill(target)])
+			await _hit(target, "-%d" % dealt, Color(1, 0.45, 0.4), false)
 		_refresh()
+		if _all_dead(allies):
+			break
 		await get_tree().create_timer(STEP).timeout
 	if _all_dead(allies):
 		_end_battle(false)
@@ -264,15 +273,48 @@ func _enemy_phase() -> void:
 	round_no += 1
 	_start_round()
 
-## 도발 중인 아군을 우선, 없으면 살아있는 첫 아군.
+## 적 고유기 — 직업별. 위협 우선순위·탱 보호·빠른 처치를 강제한다.
+func _enemy_skill(e: Combatant) -> void:
+	match e.job:
+		Jobs.BERSERKER:  # 광란: 아군 전체 광역(아프게)
+			var dmg := e.atk
+			for a in allies:
+				if a.alive():
+					var dd := a.take_damage(dmg)
+					await _hit(a, "-%d" % dd, Color(1, 0.55, 0.25), false)
+			_log("%s ▸ 광란! 아군 전체에 광역 피해" % e.display_name)
+		Jobs.PLAGUE:  # 취약 부여 + 소량(아군이 더 아프게)
+			var t := _enemy_target()
+			if t:
+				t.vulnerable = 2
+				var dd := t.take_damage(int(round(e.atk * 0.5)))
+				_log("%s ▸ 역병! %s 취약 2턴 (%d 피해)%s" % [e.display_name, t.display_name, dd, _kill(t)])
+				await _hit(t, "취약! -%d" % dd, Color(0.7, 0.95, 0.4), false)
+		Jobs.HEADSMAN:  # 처형 강타: 최저 HP 아군에 큰 피해(취약이면 더)
+			var t := _enemy_target()
+			if t:
+				var dd := t.take_damage(e.atk * 2)
+				_log("%s ▸ 처형! %s에 %d 피해%s" % [e.display_name, t.display_name, dd, _kill(t)])
+				await _hit(t, "처형 -%d" % dd, Color(1, 0.4, 0.45), true)
+		Jobs.KNIGHT:  # 방어 태세: 자기 보호막(더 단단하게 → 빨리 잡아야)
+			e.shield += 15
+			_log("%s ▸ 방어 태세! 보호막 15" % e.display_name)
+			await _hit(e, "방패+15", Color(0.55, 0.75, 1.0), false)
+		_:
+			pass
+
+## 도발 중인 아군을 우선, 없으면 최저 HP 아군(집중 공격).
 func _enemy_target() -> Combatant:
+	var taunter: Combatant = null
+	var weakest: Combatant = null
 	for a in allies:
-		if a.alive() and a.taunt > 0:
-			return a
-	for a in allies:
-		if a.alive():
-			return a
-	return null
+		if not a.alive():
+			continue
+		if a.taunt > 0 and (taunter == null):
+			taunter = a
+		if weakest == null or a.hp < weakest.hp:
+			weakest = a
+	return taunter if taunter != null else weakest
 
 func _all_dead(arr: Array[Combatant]) -> bool:
 	for c in arr:

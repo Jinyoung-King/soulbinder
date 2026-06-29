@@ -112,7 +112,8 @@ func _roster_card(idx: int) -> Control:
 	card.add_child(box)
 
 	box.add_child(_wrap("%s%s" % [e.name, ("   ▸ 출전 %d" % (order + 1)) if picked else ""], 19, Color.WHITE if picked else Color(0.82, 0.82, 0.88), W))
-	box.add_child(_wrap("%s · Lv %d (EXP %d/%d)" % [d.name, e.level, int(e.get("exp", 0)), GameState.exp_need(int(e.level))], 14, d.color.lightened(0.1), W))
+	box.add_child(_wrap("%s · Lv %d" % [d.name, e.level], 14, d.color.lightened(0.1), W))
+	box.add_child(_exp_gauge(int(e.get("exp", 0)), GameState.exp_need(int(e.level)), d.color, W))
 	box.add_child(_wrap("HP %d / 공격 %d" % [d.hp + (int(e.level) - 1) * 5, d.atk + int(e.level) - 1], 13, Color(0.6, 0.62, 0.72), W))
 	box.add_child(_wrap(d.skill + " — " + d.desc, 13, Color(0.62, 0.6, 0.72), W))
 	var lore := _wrap(e.lore, 12, Color(0.5, 0.48, 0.6), W)
@@ -164,6 +165,23 @@ func _btn(text: String, accent: Color, cb: Callable) -> Button:
 	UIKit.style_button(b, accent)
 	b.pressed.connect(cb)
 	return b
+
+## EXP 게이지(수치 없이 막대로만).
+func _exp_gauge(cur: int, need: int, col: Color, width: int) -> ProgressBar:
+	var bar := ProgressBar.new()
+	bar.max_value = maxi(1, need)
+	bar.value = cur
+	bar.show_percentage = false
+	bar.custom_minimum_size = Vector2(width - 24, 7)
+	var bg := StyleBoxFlat.new()
+	bg.bg_color = Color(0.2, 0.2, 0.26, 0.8)
+	bg.set_corner_radius_all(3)
+	bar.add_theme_stylebox_override("background", bg)
+	var fill := StyleBoxFlat.new()
+	fill.bg_color = col.lightened(0.1)
+	fill.set_corner_radius_all(3)
+	bar.add_theme_stylebox_override("fill", fill)
+	return bar
 
 ## 카드용: 폭 고정 + 자동 줄바꿈(긴 텍스트가 카드를 넓히지 않게).
 func _wrap(text: String, size: int, color: Color, width: int) -> Label:
