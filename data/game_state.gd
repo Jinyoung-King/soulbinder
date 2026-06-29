@@ -1,9 +1,10 @@
 extends Node
 ## 전역 상태(오토로드). 버전 + 거둔 영혼 로스터/사연(전투 사이 영구 보존).
 
-const VERSION := "v0.21"  ## 빌드 버전(타이틀 표기) — 빌드마다 올릴 것
+const VERSION := "v0.22"  ## 빌드 버전(타이틀 표기) — 빌드마다 올릴 것
 
 const PARTY_MAX := 3  ## 출전 팀 최대 인원
+var battle_speed := 1.0  ## 전투 연출 속도 배수(빠른 전투 토글, 세션 유지)
 const EXP_PER_ENEMY := 3  ## 전투 승리 시 생존 영혼이 적 1체당 얻는 경험치
 
 ## 거둔 영혼 목록. 각 항목: {job, name, lore, level}.

@@ -113,6 +113,19 @@ func _build_ui() -> void:
 	flash.z_index = 200
 	add_child(flash)
 
+	# 빠른 전투 토글(우상단)
+	var speed_btn := Button.new()
+	speed_btn.add_theme_font_override("font", FONT)
+	speed_btn.add_theme_font_size_override("font_size", 16)
+	speed_btn.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT, Control.PRESET_MODE_KEEP_SIZE)
+	speed_btn.offset_left = -132; speed_btn.offset_top = 10; speed_btn.offset_right = -12; speed_btn.offset_bottom = 46
+	speed_btn.text = "속도 x%d" % int(GameState.battle_speed)
+	UIKit.style_button(speed_btn, Color(0.5, 0.6, 0.7))
+	speed_btn.pressed.connect(func():
+		GameState.battle_speed = 3.0 if GameState.battle_speed < 2.0 else 1.0
+		speed_btn.text = "속도 x%d" % int(GameState.battle_speed))
+	add_child(speed_btn)
+
 # ── 전투 시작/라운드 ─────────────────────────────────────────────
 func _start_battle() -> void:
 	# 파티 = 편성된 출전 팀(레벨 반영). 비어 있으면 앞 3인으로 폴백.
@@ -291,7 +304,7 @@ func _finish_actor() -> void:
 # ── 적 페이즈(하나씩 순차로) ─────────────────────────────────────
 func _enemy_phase() -> void:
 	if not fast:
-		await get_tree().create_timer(STEP).timeout
+		await get_tree().create_timer(_d(STEP)).timeout
 	for e in enemies:
 		if not e.alive():
 			continue
@@ -310,7 +323,7 @@ func _enemy_phase() -> void:
 		if _all_dead(allies):
 			break
 		if not fast:
-			await get_tree().create_timer(STEP).timeout
+			await get_tree().create_timer(_d(STEP)).timeout
 	if _all_dead(allies):
 		_end_battle(false)
 		return
@@ -459,6 +472,10 @@ func _on_collect(e: Combatant) -> void:
 	_refresh()
 
 # ── 공격 돌진(행동 주체가 상대 쪽으로 darts) ───────────────────
+## 연출 시간 = 기본 / 속도배수(빠른 전투 토글). 최소치로 0 나눗셈 방지.
+func _d(base: float) -> float:
+	return base / maxf(0.1, GameState.battle_speed)
+
 func _lunge(c: Combatant) -> void:
 	if fast:
 		return
@@ -468,8 +485,8 @@ func _lunge(c: Combatant) -> void:
 	var dir := Vector2(0, 22 if c.is_enemy else -22)  # 적은 아래→위 아군 쪽, 아군은 위로
 	var base := card.position
 	var tw := create_tween()
-	tw.tween_property(card, "position", base + dir, 0.09).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-	tw.tween_property(card, "position", base, 0.10)
+	tw.tween_property(card, "position", base + dir, _d(0.09)).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	tw.tween_property(card, "position", base, _d(0.10))
 	await tw.finished
 
 ## 화면 전체 플래시(치명타·강타 강조). 대기 안 함.
@@ -478,7 +495,7 @@ func _screen_flash(col: Color) -> void:
 		return
 	flash.color = Color(col.r, col.g, col.b, 0.28)
 	var tw := create_tween()
-	tw.tween_property(flash, "color:a", 0.0, 0.35)
+	tw.tween_property(flash, "color:a", 0.0, _d(0.35))
 
 # ── 피격 연출: 카드 번쩍 + 데미지 숫자 떠오름 ────────────────────
 func _hit(c: Combatant, text: String, color: Color, big: bool) -> void:
@@ -492,11 +509,12 @@ func _hit(c: Combatant, text: String, color: Color, big: bool) -> void:
 	# 카드 번쩍(밝게 → 원복) + 흔들림(피격 손맛)
 	card.modulate = Color(1.5, 1.4, 1.4)
 	var base := card.position
+	var sd := _d(0.04)
 	var shake := create_tween()
-	shake.tween_property(card, "position", base + Vector2(7, 0), 0.04)
-	shake.tween_property(card, "position", base - Vector2(6, 0), 0.04)
-	shake.tween_property(card, "position", base + Vector2(3, 0), 0.04)
-	shake.tween_property(card, "position", base, 0.04)
+	shake.tween_property(card, "position", base + Vector2(7, 0), sd)
+	shake.tween_property(card, "position", base - Vector2(6, 0), sd)
+	shake.tween_property(card, "position", base + Vector2(3, 0), sd)
+	shake.tween_property(card, "position", base, sd)
 	# 떠오르는 숫자
 	var lbl := _mk_label(text, 34 if big else 26, color)
 	lbl.z_index = 100
@@ -504,11 +522,12 @@ func _hit(c: Combatant, text: String, color: Color, big: bool) -> void:
 	lbl.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.85))
 	add_child(lbl)
 	lbl.position = center - Vector2(40, 10)
+	var fh := _d(FX_HIT)
 	var tw := create_tween()
 	tw.set_parallel(true)
-	tw.tween_property(lbl, "position:y", lbl.position.y - 48, FX_HIT)
-	tw.tween_property(lbl, "modulate:a", 0.0, FX_HIT).set_delay(FX_HIT * 0.4)
-	tw.tween_property(card, "modulate", Color.WHITE, FX_HIT * 0.5)
+	tw.tween_property(lbl, "position:y", lbl.position.y - 48, fh)
+	tw.tween_property(lbl, "modulate:a", 0.0, fh).set_delay(fh * 0.4)
+	tw.tween_property(card, "modulate", Color.WHITE, fh * 0.5)
 	await tw.finished
 	lbl.queue_free()
 
