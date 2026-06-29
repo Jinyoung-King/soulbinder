@@ -35,6 +35,7 @@ var action: String = ""               # "atk" | "skill"
 var round_no := 1
 var log_lines: Array[String] = []
 var node_type := "battle"             # 현재 노드 타입(elite 보상 판정)
+var fast := false                     # true면 연출 딜레이 생략(밸런스 시뮬·빠른 전투용)
 var busy := false                     # 연출 재생 중 입력 무시
 var show_tip := false                 # 첫 전투 콤보 안내
 var card_of: Dictionary = {}          # Combatant → 카드 노드(연출 위치용)
@@ -49,6 +50,11 @@ var prompt_label: Label
 var action_box: HBoxContainer
 
 func _ready() -> void:
+	if not fast:  # 시뮬 모드는 UI 생성 생략(성능)
+		_build_ui()
+	_start_battle()
+
+func _build_ui() -> void:
 	var bg := ColorRect.new()
 	bg.color = Color(0.06, 0.05, 0.09)
 	bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -106,8 +112,6 @@ func _ready() -> void:
 	flash.color = Color(1, 1, 1, 0)
 	flash.z_index = 200
 	add_child(flash)
-
-	_start_battle()
 
 # ── 전투 시작/라운드 ─────────────────────────────────────────────
 func _start_battle() -> void:
@@ -286,7 +290,8 @@ func _finish_actor() -> void:
 
 # ── 적 페이즈(하나씩 순차로) ─────────────────────────────────────
 func _enemy_phase() -> void:
-	await get_tree().create_timer(STEP).timeout
+	if not fast:
+		await get_tree().create_timer(STEP).timeout
 	for e in enemies:
 		if not e.alive():
 			continue
@@ -304,7 +309,8 @@ func _enemy_phase() -> void:
 		_refresh()
 		if _all_dead(allies):
 			break
-		await get_tree().create_timer(STEP).timeout
+		if not fast:
+			await get_tree().create_timer(STEP).timeout
 	if _all_dead(allies):
 		_end_battle(false)
 		return
@@ -332,8 +338,8 @@ func _enemy_skill(e: Combatant) -> void:
 				var dd := t.take_damage(int(round(e.atk * 0.5)))
 				_log("%s ▸ 역병! %s 취약 2턴 (%d 피해)%s" % [e.display_name, t.display_name, dd, _kill(t)])
 				await _hit(t, "취약! -%d" % dd, Color(0.7, 0.95, 0.4), false)
-		Jobs.HEADSMAN:  # 처형 강타: 최저 HP 아군에 큰 피해(취약이면 더)
-			var t := _enemy_target()
+		Jobs.HEADSMAN:  # 처형 강타: 도발 무시하고 최저 HP 아군 저격(약체 보호가 과제)
+			var t := _lowest_living(allies)
 			if t:
 				_screen_flash(Color(1, 0.3, 0.3))
 				var dd := t.take_damage(e.atk * 2)
@@ -454,6 +460,8 @@ func _on_collect(e: Combatant) -> void:
 
 # ── 공격 돌진(행동 주체가 상대 쪽으로 darts) ───────────────────
 func _lunge(c: Combatant) -> void:
+	if fast:
+		return
 	var card: Control = card_of.get(c)
 	if card == null:
 		return
@@ -466,12 +474,16 @@ func _lunge(c: Combatant) -> void:
 
 ## 화면 전체 플래시(치명타·강타 강조). 대기 안 함.
 func _screen_flash(col: Color) -> void:
+	if fast:
+		return
 	flash.color = Color(col.r, col.g, col.b, 0.28)
 	var tw := create_tween()
 	tw.tween_property(flash, "color:a", 0.0, 0.35)
 
 # ── 피격 연출: 카드 번쩍 + 데미지 숫자 떠오름 ────────────────────
 func _hit(c: Combatant, text: String, color: Color, big: bool) -> void:
+	if fast:
+		return
 	var card: Control = card_of.get(c)
 	if card == null:
 		return
@@ -502,6 +514,8 @@ func _hit(c: Combatant, text: String, color: Color, big: bool) -> void:
 
 # ── 렌더 ─────────────────────────────────────────────────────────
 func _refresh() -> void:
+	if fast:
+		return  # 시뮬/빠른 전투: 시각 갱신 생략(로직은 외부에서 관리)
 	_clear(enemies_box)
 	_clear(allies_box)
 	_clear(action_box)

@@ -77,8 +77,8 @@ const REGIONS := [
 			"n6": {"type": "boss", "name": "왕의 침소 · 보스", "layer": 4, "next": [],
 				"intro": "왕의 침소. 그날 밤의 끝이 여기 있다.",
 				"enemies": [
-					{"name": "왕의 그림자", "job": Jobs.HEADSMAN, "hp": 96, "atk": 12, "lore": "왕이 마지막으로 내린 명령, 그 자체가 된 그림자."},
-					{"name": "충성스런 시종", "job": Jobs.KNIGHT, "hp": 34, "atk": 6, "lore": "주인을 두고 달아나지 못한 채 그 곁에서 굳었다."},
+					{"name": "왕의 그림자", "job": Jobs.HEADSMAN, "hp": 120, "atk": 16, "lore": "왕이 마지막으로 내린 명령, 그 자체가 된 그림자."},
+					{"name": "충성스런 시종", "job": Jobs.KNIGHT, "hp": 40, "atk": 7, "lore": "주인을 두고 달아나지 못한 채 그 곁에서 굳었다."},
 				]},
 		},
 	},
@@ -103,8 +103,8 @@ const REGIONS := [
 			"m6": {"type": "boss", "name": "옥좌 · 찬탈자의 그림자", "layer": 4, "next": [],
 				"intro": "옥좌. 그날 밤 성문을 연 자가 왕관을 쓴 채 기다린다.",
 				"enemies": [
-					{"name": "찬탈자의 그림자", "job": Jobs.HEADSMAN, "hp": 132, "atk": 14, "lore": "그날 밤 성문을 연 자. 왕관을 위해 왕국을 통째로 팔았다."},
-					{"name": "배신한 친위대장", "job": Jobs.KNIGHT, "hp": 64, "atk": 10, "lore": "찬탈자에게 충성을 옮긴 칼."},
+					{"name": "찬탈자의 그림자", "job": Jobs.HEADSMAN, "hp": 138, "atk": 19, "lore": "그날 밤 성문을 연 자. 왕관을 위해 왕국을 통째로 팔았다."},
+					{"name": "배신한 친위대장", "job": Jobs.KNIGHT, "hp": 70, "atk": 11, "lore": "찬탈자에게 충성을 옮긴 칼."},
 				]},
 		},
 	},
