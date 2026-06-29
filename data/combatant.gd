@@ -12,6 +12,7 @@ var max_hp: int
 var hp: int
 var atk: int
 var is_enemy: bool
+var level := 1  # 표시용(아군 전투 카드)
 var lore := ""  # 거둘 때 해금되는 '증언'(적 수집용)
 
 # 상태(턴 단위로 감소/소비)
@@ -54,7 +55,7 @@ func tick() -> void:
 ## 카드에 표시할 상태 뱃지 텍스트(없으면 빈 문자열).
 func status_text() -> String:
 	var parts: Array[String] = []
-	if shield > 0: parts.append("🛡%d" % shield)
+	if shield > 0: parts.append("방패%d" % shield)
 	if vulnerable > 0: parts.append("취약%d" % vulnerable)
 	if taunt > 0: parts.append("도발%d" % taunt)
 	return "  ".join(parts)

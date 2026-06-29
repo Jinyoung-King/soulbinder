@@ -20,7 +20,7 @@ const TABLE := {
 	PLAGUE: {
 		"name": "독술사", "color": Color(0.45, 0.78, 0.42),
 		"hp": 30, "atk": 4,
-		"skill": "역병의 표식", "desc": "대상에 취약 2턴(받는 피해 ↑) + 소량 피해",
+		"skill": "역병의 표식", "desc": "대상에 취약 2턴(받는 피해 증가) + 소량 피해",
 		"cd": 1, "needs_target": true,
 	},
 	HEADSMAN: {

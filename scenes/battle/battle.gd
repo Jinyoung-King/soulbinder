@@ -130,7 +130,9 @@ func _start_battle() -> void:
 func _ally(entry: Dictionary) -> Combatant:
 	var d := Jobs.get_def(entry.job)
 	var lvl := int(entry.level)
-	return Combatant.new(entry.name, entry.job, d.color, d.hp + (lvl - 1) * 5, d.atk + (lvl - 1), false)
+	var c := Combatant.new(entry.name, entry.job, d.color, d.hp + (lvl - 1) * 5, d.atk + (lvl - 1), false)
+	c.level = lvl
+	return c
 
 func _enemy_soul(p_name: String, job: String, lore: String, hp: int, atk: int) -> Combatant:
 	var c := Combatant.new(p_name, job, Color(0.55, 0.55, 0.6), hp, atk, true)
@@ -177,14 +179,6 @@ func _on_target(enemy: Combatant) -> void:
 	await _resolve(enemy)
 	busy = false
 
-func _on_back() -> void:
-	if busy:
-		return
-	phase = Phase.SELECT_ACTOR
-	actor = null
-	action = ""
-	_refresh()
-
 # ── 행동 처리(연출 포함) ─────────────────────────────────────────
 func _resolve(target: Combatant) -> void:
 	if action == "atk":
@@ -203,7 +197,7 @@ func _resolve_skill(target: Combatant) -> void:
 			actor.shield += KNIGHT_SHIELD
 			actor.taunt = KNIGHT_TAUNT
 			_log("%s ▸ 수호의 맹세! 보호막 %d + 도발" % [actor.display_name, KNIGHT_SHIELD])
-			await _hit(actor, "🛡 방어", Color(0.55, 0.75, 1.0), false)
+			await _hit(actor, "방어!", Color(0.55, 0.75, 1.0), false)
 		Jobs.PLAGUE:
 			target.vulnerable = PLAGUE_VULN
 			var dealt := target.take_damage(PLAGUE_DMG)
@@ -230,7 +224,7 @@ func _resolve_skill(target: Combatant) -> void:
 			pass
 
 func _kill(c: Combatant) -> String:
-	return "  💀쓰러짐" if not c.alive() else ""
+	return "  (쓰러짐)" if not c.alive() else ""
 
 func _finish_actor() -> void:
 	pending.erase(actor)
@@ -303,16 +297,18 @@ func _end_battle(won: bool) -> void:
 		_log("패배… 강령술사도 쓰러졌다.")
 	_refresh()
 
-## 생존한 참전 영혼(로스터 앞 3인) 레벨업 — 영구 보존.
+## 생존한 참전 영혼 경험치 획득 + 레벨업 — 영구 보존.
 func _apply_levelups() -> void:
+	var amt := GameState.EXP_PER_ENEMY * enemies.size()
 	var ups: Array[String] = []
 	for i in allies.size():
 		if allies[i].alive() and i < ally_src.size():
 			var ri := ally_src[i]
-			GameState.roster[ri].level += 1
-			ups.append("%s Lv%d" % [GameState.roster[ri].name, GameState.roster[ri].level])
+			var gained := GameState.grant_exp(ri, amt)
+			var tag := " → Lv%d!" % GameState.roster[ri].level if gained > 0 else ""
+			ups.append("%s +%dEXP%s" % [GameState.roster[ri].name, amt, tag])
 	if not ups.is_empty():
-		_log("레벨업 ▸ " + ", ".join(ups))
+		_log("획득 ▸ " + ", ".join(ups))
 
 ## 거두기 — 쓰러진 영혼 하나를 로스터에 추가 + 사연 해금.
 func _on_collect(e: Combatant) -> void:
@@ -364,28 +360,27 @@ func _refresh() -> void:
 			e_click = true
 			e_cb = _on_collect
 		enemies_box.add_child(_unit_card(e, e_click, e_cb))
+	# 아군은 선택/행동/타겟 단계 내내 클릭 가능 → 다른 영혼 클릭으로 즉시 재선택(뒤로 버튼 불필요)
+	var ally_pick := phase == Phase.SELECT_ACTOR or phase == Phase.SELECT_ACTION or phase == Phase.SELECT_TARGET
 	for a in allies:
-		var sel := phase == Phase.SELECT_ACTOR and pending.has(a)
-		allies_box.add_child(_unit_card(a, sel, _on_actor))
+		allies_box.add_child(_unit_card(a, ally_pick and pending.has(a), _on_actor))
 
 	log_label.text = "\n".join(log_lines.slice(maxi(0, log_lines.size() - 5)))
 	_set_banner()
 
 	match phase:
 		Phase.SELECT_ACTOR:
-			prompt_label.text = "행동할 영혼을 선택"
+			prompt_label.text = "행동할 영혼을 선택 (아래 카드)"
 		Phase.SELECT_ACTION:
-			prompt_label.text = "%s — 행동 선택" % actor.display_name
+			prompt_label.text = "%s — 행동 선택  (다른 영혼 클릭 시 교체)" % actor.display_name
 			_add_action_btn("기본 공격", actor.color, func(): _on_action("atk"))
 			var d := Jobs.get_def(actor.job)
 			var skill_btn := _add_action_btn("%s (%s)" % [d.skill, d.desc], actor.color, func(): _on_action("skill"))
 			if actor.cd > 0:
 				skill_btn.disabled = true
 				skill_btn.text = "%s — 재사용 %d턴" % [d.skill, actor.cd]
-			_add_action_btn("◂ 뒤로", Color(0.5, 0.5, 0.58), _on_back)
 		Phase.SELECT_TARGET:
-			prompt_label.text = "%s의 대상을 선택(위쪽 적)" % actor.display_name
-			_add_action_btn("◂ 뒤로", Color(0.5, 0.5, 0.58), _on_back)
+			prompt_label.text = "%s의 대상을 선택 (위쪽 적)" % actor.display_name
 		Phase.ENEMY:
 			prompt_label.text = ""
 		Phase.COLLECT:
@@ -403,7 +398,7 @@ func _refresh() -> void:
 func _set_banner() -> void:
 	match phase:
 		Phase.ENEMY:
-			banner.text = "✦ 적의 차례 ✦"
+			banner.text = "— 적의 차례 —"
 			banner.add_theme_color_override("font_color", Color(1, 0.55, 0.5))
 		Phase.COLLECT, Phase.RESULT:
 			banner.text = "전투 종료"
@@ -425,7 +420,8 @@ func _unit_card(c: Combatant, clickable: bool, onclick: Callable) -> Control:
 	card.add_child(box)
 
 	var dead := not c.alive()
-	box.add_child(_mk_label(c.display_name + ("  💀" if dead else ""), 18, Color.WHITE if not dead else Color(0.45, 0.45, 0.5)))
+	var title := c.display_name + ("  Lv%d" % c.level if not c.is_enemy else "")
+	box.add_child(_mk_label(title, 18, Color.WHITE if not dead else Color(0.45, 0.45, 0.5)))
 
 	var bar := ProgressBar.new()
 	bar.max_value = c.max_hp

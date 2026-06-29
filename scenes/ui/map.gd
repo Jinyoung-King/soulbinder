@@ -74,7 +74,7 @@ func _node_card(id: String, reach: Array) -> Control:
 	var choosable := reach.has(id) and not cleared
 
 	var accent := Color(0, 0, 0, 0)
-	var state_txt := "🔒 잠김"
+	var state_txt := "잠김"
 	var name_col := Color(0.5, 0.48, 0.58)
 	if cleared:
 		accent = Color(0.45, 0.78, 0.5); state_txt = "✓ 클리어"; name_col = Color(0.8, 0.85, 0.82)
