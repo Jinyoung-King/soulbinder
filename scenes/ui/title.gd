@@ -44,6 +44,16 @@ func _ready() -> void:
 	party.add_theme_font_size_override("font_size", 22)
 	UIKit.style_button(party, Color(0.5, 0.62, 0.95))
 	v.add_child(party)
+	# 증언의 서 버튼
+	var codex := Button.new()
+	codex.text = "증언의 서"
+	codex.pressed.connect(func(): get_tree().change_scene_to_file("res://scenes/ui/codex.tscn"))
+	codex.custom_minimum_size = Vector2(280, 50)
+	codex.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	codex.add_theme_font_override("font", FONT)
+	codex.add_theme_font_size_override("font_size", 22)
+	UIKit.style_button(codex, Color(0.62, 0.55, 0.78))
+	v.add_child(codex)
 	# 버전(우하단)
 	var ver := _label(GameState.VERSION, 16, Color(0.5, 0.5, 0.6))
 	ver.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_RIGHT, Control.PRESET_MODE_KEEP_SIZE)

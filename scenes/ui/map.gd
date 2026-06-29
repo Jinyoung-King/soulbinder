@@ -77,6 +77,7 @@ func _ready() -> void:
 			GameState.reset_run()
 			get_tree().reload_current_scene()))
 	btns.add_child(_btn("영혼 편성", Color(0.5, 0.62, 0.95), func(): get_tree().change_scene_to_file("res://scenes/ui/party.tscn")))
+	btns.add_child(_btn("증언의 서", Color(0.62, 0.55, 0.78), func(): get_tree().change_scene_to_file("res://scenes/ui/codex.tscn")))
 	btns.add_child(_btn("타이틀로", Color(0.5, 0.5, 0.58), func(): get_tree().change_scene_to_file("res://scenes/ui/title.tscn")))
 
 func _node_card(id: String, reach: Array) -> Control:
