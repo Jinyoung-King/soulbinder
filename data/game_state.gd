@@ -1,7 +1,7 @@
 extends Node
 ## 전역 상태(오토로드). 버전 + 거둔 영혼 로스터/사연(전투 사이 영구 보존).
 
-const VERSION := "v0.23"  ## 빌드 버전(타이틀 표기) — 빌드마다 올릴 것
+const VERSION := "v0.24"  ## 빌드 버전(타이틀 표기) — 빌드마다 올릴 것
 
 const PARTY_MAX := 3  ## 출전 팀 최대 인원
 var battle_speed := 1.0  ## 전투 연출 속도 배수(빠른 전투 토글, 세션 유지)
@@ -67,6 +67,30 @@ func heal_party() -> void:
 	for idx in party:
 		if idx >= 0 and idx < roster.size():
 			roster[idx]["hp"] = max_hp(roster[idx])
+
+## 출전 팀 전원 최대 HP의 pct만큼 피해(사건 비용). 최소 1 보장.
+func damage_party(pct: float) -> void:
+	for idx in party:
+		if idx >= 0 and idx < roster.size():
+			var e: Dictionary = roster[idx]
+			e["hp"] = maxi(1, int(e.get("hp", 0)) - int(max_hp(e) * pct))
+
+## 출전 팀 평균 레벨(영입 영혼 레벨 기준).
+func party_avg_level() -> int:
+	var s := 0
+	var n := 0
+	for idx in party:
+		if idx >= 0 and idx < roster.size():
+			s += int(roster[idx].level); n += 1
+	return maxi(1, s / maxi(1, n))
+
+## 무작위 직업의 영혼을 영입(사건). 이름 반환.
+func bind_random_soul() -> String:
+	var jobs := [Jobs.KNIGHT, Jobs.PLAGUE, Jobs.HEADSMAN, Jobs.BERSERKER, Jobs.MENDER, Jobs.CHRONO]
+	var j: String = jobs[randi() % jobs.size()]
+	var nm: String = "유랑하는 " + Jobs.get_def(j).name
+	bind_soul({"job": j, "name": nm, "lore": "길 위에서 너의 부름에 답한 영혼.", "level": party_avg_level()})
+	return nm
 
 func _ready() -> void:
 	randomize()  # 런마다 적 구성·수집 대상이 달라지도록 RNG 시드

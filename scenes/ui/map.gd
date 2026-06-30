@@ -121,6 +121,7 @@ func _node_card(ri: int, id: String, reach: Array) -> Control:
 		"battle": info = "전투 · 적 %d" % ecount
 		"elite": info = "정예 · 적 %d · 보상 +%dLv" % [ecount, RunMap.ELITE_BONUS]
 		"rest": info = "휴식 · 팀 회복 + %dLv" % RunMap.REST_LEVELS
+		"event": info = "사건 · 선택(위험/보상)"
 		"boss": info = "보스 · 적 %d" % ecount
 
 	var card := PanelContainer.new()
@@ -145,6 +146,7 @@ func _type_col(t: String) -> Color:
 	match t:
 		"elite": return Color(0.95, 0.7, 0.35)
 		"rest": return Color(0.5, 0.8, 0.7)
+		"event": return Color(0.8, 0.6, 0.95)
 		"boss": return Color(0.95, 0.45, 0.5)
 		_: return Color(0.62, 0.6, 0.72)
 
@@ -157,6 +159,9 @@ func _enter(ri: int, id: String) -> void:
 		if not GameState.run_cleared.has(id):
 			GameState.run_cleared.append(id)
 		get_tree().reload_current_scene()
+	elif n.type == "event":
+		GameState.cur_node = id  # 사건 화면이 클리어 처리
+		get_tree().change_scene_to_file("res://scenes/ui/event.tscn")
 	else:
 		GameState.cur_node = id
 		get_tree().change_scene_to_file("res://scenes/battle/battle.tscn")
