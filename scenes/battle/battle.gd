@@ -651,7 +651,8 @@ func _unit_card(c: Combatant, clickable: bool, onclick: Callable) -> Control:
 	var dead := not c.alive()
 	var header := HBoxContainer.new()
 	header.add_theme_constant_override("separation", 8)
-	header.add_child(Avatar.new().setup(c.job, accent, 50))
+	var tint := Color(1, 0.5, 0.5) if c.is_enemy else Color.WHITE  # 적=붉은 틴트
+	header.add_child(Avatar.new().setup(c.job, accent, 50, tint))
 	var title := c.display_name + ("  Lv%d" % c.level if not c.is_enemy else "")
 	var name_l := _mk_label(title, 18, Color.WHITE if not dead else Color(0.45, 0.45, 0.5))
 	name_l.size_flags_vertical = Control.SIZE_SHRINK_CENTER

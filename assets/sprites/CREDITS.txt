@@ -1,0 +1,3 @@
+캐릭터 스프라이트: Kenney "Tiny Dungeon" (https://kenney.nl/assets/tiny-dungeon)
+라이선스: CC0 1.0 (Public Domain — 출처 표기 불필요). 감사 차원 표기.
+매핑: knight=tile_0096, headsman=tile_0087, berserker=tile_0086, chrono=tile_0084, mender=tile_0099, plague=tile_0100

@@ -6,15 +6,30 @@ extends Control
 
 var job: String = ""
 var col: Color = Color.WHITE
+var has_sprite := false  # assets/sprites/<job>.png 있으면 이미지 사용, 없으면 실루엣
 
-func setup(p_job: String, p_col: Color, sz := 44) -> Avatar:
+func setup(p_job: String, p_col: Color, sz := 44, tint := Color.WHITE) -> Avatar:
 	job = p_job
 	col = p_col
 	custom_minimum_size = Vector2(sz, sz)
+	modulate = tint  # 적은 붉은 틴트로 구분(스프라이트·실루엣 공통)
+	var path := "res://assets/sprites/%s.png" % p_job
+	if ResourceLoader.exists(path):  # 스프라이트 있으면 이미지로
+		var tr := TextureRect.new()
+		tr.texture = load(path)
+		tr.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		tr.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		tr.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		tr.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST  # 픽셀아트 또렷하게
+		tr.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		add_child(tr)
+		has_sprite = true
 	queue_redraw()
 	return self
 
 func _draw() -> void:
+	if has_sprite:
+		return  # 스프라이트 사용 시 실루엣 생략
 	var w := size.x
 	var h := size.y
 	var cx := w * 0.5
