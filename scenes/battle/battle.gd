@@ -159,11 +159,15 @@ func _start_battle() -> void:
 		if GameState.has_relic("vigor"): a.atk += 2
 		if GameState.has_relic("vital"): a.shield += 10
 		if GameState.has_relic("armor"): a.dmg_reduce += 1
+		if GameState.has_relic("swift"): a.cd = 0  # 신속: 고유기 즉시
 		if a.job == Jobs.KNIGHT: a.dmg_reduce += 1  # 불굴
 		if a.job == Jobs.CHRONO: has_chrono = true
 	if GameState.has_relic("radiance"):
 		for e in enemies:
 			e.vulnerable = 1
+	if GameState.has_relic("ward"):  # 약화: 적 공격 -2
+		for e in enemies:
+			e.atk = maxi(1, e.atk - 2)
 	if has_chrono:  # 시간 왜곡: 적 고유기 1턴 지연
 		for e in enemies:
 			e.cd += 1
@@ -199,6 +203,9 @@ func _start_round() -> void:
 		if a.alive() and a.job == Jobs.MENDER:
 			var low := _lowest_living(allies)
 			if low: low.heal(4)
+	if GameState.has_relic("bulwark"):  # 성벽: 매 라운드 보호막
+		for a in allies:
+			if a.alive(): a.shield += 4
 	pending = []
 	for a in allies:
 		if a.alive():

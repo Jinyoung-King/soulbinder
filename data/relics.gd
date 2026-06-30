@@ -9,8 +9,11 @@ const TABLE := {
 	"armor": {"name": "강철 피부", "desc": "받는 피해 -1"},
 	"regen": {"name": "재생의 성배", "desc": "매 라운드 전원 체력 +3"},
 	"radiance": {"name": "저주의 등불", "desc": "전투 시작 시 적 전체 취약"},
+	"swift": {"name": "신속의 모래", "desc": "전투 시작 시 고유기를 즉시 사용 가능"},
+	"bulwark": {"name": "성벽의 인장", "desc": "매 라운드 전원 보호막 +4"},
+	"ward": {"name": "약화의 부적", "desc": "전투 시작 시 적 전체 공격 -2"},
 }
-const IDS := ["vigor", "vital", "armor", "regen", "radiance"]
+const IDS := ["vigor", "vital", "armor", "regen", "radiance", "swift", "bulwark", "ward"]
 
 static func get_def(id: String) -> Dictionary:
 	return TABLE[id]

@@ -28,6 +28,18 @@ func _ready() -> void:
 			"a": {"label": "손을 넣는다 (도박)", "desc": "절반은 유물, 절반은 저주(HP 30%)", "fx": "gamble"},
 			"b": {"label": "물러나 숨을 고른다", "desc": "출전 팀 완전 회복", "fx": "rest"},
 		},
+		{
+			"title": "고대 무기고",
+			"flavor": "먼지 쌓인 무기고. 힘이 잠들어 있으나 대가 없이는 깨어나지 않는다.",
+			"a": {"label": "무장을 갖춘다", "desc": "유물 획득 (대가: 팀 HP 20%)", "fx": "armory"},
+			"b": {"label": "힘을 끌어낸다", "desc": "출전 팀 전원 +1 레벨", "fx": "level"},
+		},
+		{
+			"title": "쌍둥이 영혼",
+			"flavor": "두 영혼이 함께 떠돈다. 둘 다 거두기엔 너의 부름이 약하다.",
+			"a": {"label": "둘 다 거둔다", "desc": "무작위 영혼 2체 영입", "fx": "twin"},
+			"b": {"label": "하나만, 그리고 쉰다", "desc": "1체 영입 + 출전 팀 회복", "fx": "recruit_rest"},
+		},
 	]
 
 	var bg := ColorRect.new()
@@ -89,6 +101,18 @@ func _apply(fx: String) -> void:
 		"rest":
 			GameState.heal_party()
 			result = "숨을 고른다. 출전 팀 완전 회복."
+		"armory":
+			GameState.damage_party(0.20)
+			var rid3 := GameState.grant_random_relic()
+			result = "무장을 갖췄다. 유물 [%s] 획득." % Relics.get_def(rid3).name if rid3 != "" else "무장을 갖췄으나 더 받을 유물이 없다."
+		"twin":
+			var n1 := GameState.bind_random_soul()
+			var n2 := GameState.bind_random_soul()
+			result = "%s, %s 이(가) 합류했다." % [n1, n2]
+		"recruit_rest":
+			var n3 := GameState.bind_random_soul()
+			GameState.heal_party()
+			result = "%s 이(가) 합류하고, 팀이 회복했다." % n3
 		_:
 			result = "조용히 지나친다."
 	_show_result(result)
