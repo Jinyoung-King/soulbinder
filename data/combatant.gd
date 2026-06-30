@@ -14,6 +14,8 @@ var atk: int
 var is_enemy: bool
 var level := 1  # 표시용(아군 전투 카드)
 var lore := ""  # 거둘 때 해금되는 '증언'(적 수집용)
+var is_boss := false  # 보스(격노 페이즈 대상)
+var enraged := false  # 격노 발동 여부
 
 # 상태(턴 단위로 감소/소비)
 var shield := 0          # 흡수량(소비될 때까지 유지)

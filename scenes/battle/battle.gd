@@ -20,6 +20,7 @@ const ENEMY_HEAL := 14      # 적 치유사 회복량
 const FX_HIT := 0.55        # 피격 연출 길이
 const STEP := 0.45          # 적 행동 사이 텀(하나씩 보이게)
 const ENEMY_SKILL_CD := 2   # 적 고유기 재사용 쿨다운
+const ENRAGE_ATK := 8       # 보스 격노 시 공격 증가(HP 절반 이하)
 
 enum Phase { SELECT_ACTOR, SELECT_ACTION, SELECT_TARGET, ENEMY, COLLECT, RESULT }
 
@@ -150,6 +151,8 @@ func _start_battle() -> void:
 		var ec := _enemy_soul(e.name, e.job, e.lore, e.hp, e.atk)
 		ec.cd = 1 + enemies.size()  # 고유기 첫 사용을 스태거(1마리씩 시차)
 		enemies.append(ec)
+	if node_type == "boss" and not enemies.is_empty():
+		enemies[0].is_boss = true  # 첫 적 = 격노 페이즈 대상
 	# 유물 효과 + 패시브(전투 시작)
 	var has_chrono := false
 	for a in allies:
@@ -329,6 +332,12 @@ func _finish_actor() -> void:
 func _enemy_phase() -> void:
 	if not fast:
 		await get_tree().create_timer(_d(STEP)).timeout
+	for e in enemies:  # 보스 격노(HP 절반 이하, 1회)
+		if e.is_boss and e.alive() and not e.enraged and e.hp * 2 <= e.max_hp:
+			e.enraged = true
+			e.atk += ENRAGE_ATK
+			_log("%s — 격노! 공격이 거세진다" % e.display_name)
+			_screen_flash(Color(1, 0.3, 0.3))
 	for e in enemies:
 		if not e.alive():
 			continue

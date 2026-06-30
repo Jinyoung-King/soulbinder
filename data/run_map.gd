@@ -27,6 +27,14 @@ const POOLS := [
 		{"name": "피의 사제", "job": Jobs.MENDER, "hp": 58, "atk": 8, "lore": "산 자의 피로 죽은 자를 일으켜 세웠다."},
 		{"name": "옥좌의 시계공", "job": Jobs.CHRONO, "hp": 50, "atk": 8, "lore": "왕의 시간마저 멈추려 했던 궁정 마도사."},
 	],
+	[  # 3장 · 심연 (최강 티어)
+		{"name": "심연의 기사", "job": Jobs.KNIGHT, "hp": 72, "atk": 12, "lore": "왕국보다 오래된 어둠에 맹세를 바쳤다."},
+		{"name": "심연의 술사", "job": Jobs.PLAGUE, "hp": 60, "atk": 11, "lore": "역병의 근원을 들여다본 자."},
+		{"name": "심연의 검귀", "job": Jobs.BERSERKER, "hp": 80, "atk": 14, "lore": "심연 속에서 끝없이 베어 왔다."},
+		{"name": "심연의 망령", "job": Jobs.HEADSMAN, "hp": 74, "atk": 13, "lore": "이름도 얼굴도 어둠에 먹혔다."},
+		{"name": "심연의 사제", "job": Jobs.MENDER, "hp": 70, "atk": 10, "lore": "죽음조차 거두지 못하게 묶어 둔다."},
+		{"name": "심연의 시계공", "job": Jobs.CHRONO, "hp": 64, "atk": 11, "lore": "시간의 바깥에서 너를 기다렸다."},
+	],
 ]
 
 ## 노드 인카운터 생성 — 보스는 고정 enemies, 그 외엔 풀에서 count만큼 무작위 샘플.
@@ -105,6 +113,32 @@ const REGIONS := [
 				"enemies": [
 					{"name": "찬탈자의 그림자", "job": Jobs.HEADSMAN, "hp": 138, "atk": 19, "lore": "그날 밤 성문을 연 자. 왕관을 위해 왕국을 통째로 팔았다."},
 					{"name": "배신한 친위대장", "job": Jobs.KNIGHT, "hp": 70, "atk": 11, "lore": "찬탈자에게 충성을 옮긴 칼."},
+				]},
+		},
+	},
+	{
+		"name": "3장 · 왕관 너머 · 심연",
+		"entry": "a0",
+		"order": ["a0", "a1", "a2", "a3", "a4", "a5", "a6"],
+		"outro": "심연의 왕마저 스러진다. 거둔 모든 영혼이 마침내 잠들고, 강령술사의 긴 밤이 끝난다.",
+		"nodes": {
+			"a0": {"type": "battle", "name": "무너지는 계단", "layer": 0, "next": ["a1", "a2"], "count": 2,
+				"intro": "왕좌 아래로, 빛이 닿지 않는 계단이 끝없이 내려간다."},
+			"a1": {"type": "elite", "name": "정예 · 심연의 파수", "layer": 1, "next": ["a3"], "count": 2,
+				"intro": "정예. 어둠보다 오래된 파수꾼이 길을 막는다."},
+			"a2": {"type": "event", "name": "속삭이는 균열", "layer": 1, "next": ["a3"],
+				"intro": "벽의 균열에서 무언가 너를 부른다."},
+			"a3": {"type": "battle", "name": "이름 없는 회랑", "layer": 2, "next": ["a4", "a5"], "count": 3,
+				"intro": "이름이 먹힌 자들이 회랑을 메운다."},
+			"a4": {"type": "elite", "name": "정예 · 심연의 합창", "layer": 3, "next": ["a6"], "count": 3,
+				"intro": "정예. 여럿이 한 목소리로 너를 끌어내린다."},
+			"a5": {"type": "rest", "name": "잊힌 신단", "layer": 3, "next": ["a6"],
+				"intro": "잊힌 신단 앞에서 마지막으로 숨을 고른다."},
+			"a6": {"type": "boss", "name": "심연 · 심연의 왕", "layer": 4, "next": [],
+				"intro": "심연의 바닥. 왕국이 섬기다 잊은 것이 눈을 뜬다.",
+				"enemies": [
+					{"name": "심연의 왕", "job": Jobs.HEADSMAN, "hp": 200, "atk": 22, "lore": "왕국이 멸망과 맞바꾸려 했던 더 깊은 어둠 그 자체."},
+					{"name": "심연의 기사", "job": Jobs.KNIGHT, "hp": 90, "atk": 13, "lore": "심연의 왕을 끝까지 지키는 맹세."},
 				]},
 		},
 	},
