@@ -27,7 +27,8 @@ func _ready() -> void:
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	v.add_child(title)
 	var head := "지역 클리어" if done else "갈림길을 선택하라 — 정예는 위험하지만 더 강해진다"
-	var sub := _label("%s    ·    거둔 영혼 %d · 증언 %d" % [head, GameState.roster.size(), GameState.story_fragments.size()], 16, Color(0.6, 0.58, 0.72))
+	var asc_txt := "  ·  승천 A%d" % GameState.ascension if GameState.ascension > 0 else ""
+	var sub := _label("%s    ·    거둔 영혼 %d · 증언 %d%s" % [head, GameState.roster.size(), GameState.story_fragments.size(), asc_txt], 16, Color(0.6, 0.58, 0.72))
 	sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	v.add_child(sub)
 
@@ -77,7 +78,8 @@ func _ready() -> void:
 		msg.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		msg.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		v.add_child(msg)
-		if last_region:  # 최종 결말 — 진실 공개
+		if last_region:  # 최종 결말 — 진실 공개 + 다음 승천 해금
+			GameState.ascension_max = maxi(GameState.ascension_max, GameState.ascension + 1)
 			var truth := _label("【 그날 밤의 진실 】  " + GameState.truth_hint(), 17, Color(0.85, 0.72, 0.55))
 			truth.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 			truth.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -94,6 +96,10 @@ func _ready() -> void:
 			GameState.reset_run()
 			get_tree().reload_current_scene()))
 	elif done:
+		btns.add_child(_btn("승천 도전 A%d" % mini(GameState.ascension_max, GameState.ascension + 1), Color(0.9, 0.55, 0.35), func():
+			GameState.ascension = mini(GameState.ascension_max, GameState.ascension + 1)
+			GameState.new_run()
+			get_tree().reload_current_scene()))
 		btns.add_child(_btn("처음부터 (회복)", Color(0.6, 0.45, 0.95), func():
 			GameState.new_run()
 			get_tree().reload_current_scene()))

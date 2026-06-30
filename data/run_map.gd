@@ -40,26 +40,33 @@ const POOLS := [
 ## 노드 인카운터 생성 — 보스는 고정 enemies, 그 외엔 풀에서 count만큼 무작위 샘플.
 ## elite는 스탯 강화(+이름 접두). 매 런 달라진다.
 static func gen_enemies(ri: int, n: Dictionary) -> Array:
+	# 1) 기본 목록 — 보스는 고정, 그 외는 풀에서 셔플 샘플(+정예 강화)
+	var base := []
 	if n.has("enemies"):
-		return n.enemies  # 보스 등 고정
-	var pool: Array = POOLS[clampi(ri, 0, POOLS.size() - 1)]
-	var idxs := []
-	for i in pool.size():
-		idxs.append(i)
-	# Fisher-Yates 셔플
-	for i in range(idxs.size() - 1, 0, -1):
-		var j := randi() % (i + 1)
-		var t = idxs[i]; idxs[i] = idxs[j]; idxs[j] = t
-	var count: int = mini(n.get("count", 2), pool.size())
-	var elite: bool = n.type == "elite"
+		base = n.enemies
+	else:
+		var pool: Array = POOLS[clampi(ri, 0, POOLS.size() - 1)]
+		var idxs := []
+		for i in pool.size():
+			idxs.append(i)
+		for i in range(idxs.size() - 1, 0, -1):
+			var j := randi() % (i + 1)
+			var t = idxs[i]; idxs[i] = idxs[j]; idxs[j] = t
+		var count: int = mini(n.get("count", 2), pool.size())
+		var elite: bool = n.type == "elite"
+		for k in count:
+			var e := (pool[idxs[k]] as Dictionary).duplicate(true)
+			if elite:
+				e.hp = int(round(e.hp * 1.3)); e.atk += 2; e.name = "정예 " + e.name
+			base.append(e)
+	# 2) 승천 배수 적용(복제 — 고정 보스 원본 보호)
+	var hm := GameState.enemy_hp_mult()
+	var am := GameState.enemy_atk_mult()
 	var out := []
-	for k in count:
-		var src: Dictionary = pool[idxs[k]]
-		var e := src.duplicate(true)
-		if elite:
-			e.hp = int(round(e.hp * 1.3))
-			e.atk += 2
-			e.name = "정예 " + e.name
+	for src in base:
+		var e: Dictionary = (src as Dictionary).duplicate(true)
+		e.hp = int(round(e.hp * hm))
+		e.atk = int(round(e.atk * am))
 		out.append(e)
 	return out
 

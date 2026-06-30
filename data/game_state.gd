@@ -1,10 +1,19 @@
 extends Node
 ## 전역 상태(오토로드). 버전 + 거둔 영혼 로스터/사연(전투 사이 영구 보존).
 
-const VERSION := "v0.25"  ## 빌드 버전(타이틀 표기) — 빌드마다 올릴 것
+const VERSION := "v0.26"  ## 빌드 버전(타이틀 표기) — 빌드마다 올릴 것
 
 const PARTY_MAX := 3  ## 출전 팀 최대 인원
 var battle_speed := 1.0  ## 전투 연출 속도 배수(빠른 전투 토글, 세션 유지)
+const ASCENSION_CAP := 8  ## 승천 최대 단계
+var ascension := 0        ## 선택된 승천 난이도(이번 런 적용)
+var ascension_max := 0    ## 해금된 최고 승천(최종 결말 클리어 시 +1)
+
+## 승천 난이도 배수 — 단계당 적 HP +15% / 공격 +10%.
+func enemy_hp_mult() -> float:
+	return 1.0 + 0.15 * ascension
+func enemy_atk_mult() -> float:
+	return 1.0 + 0.10 * ascension
 const EXP_PER_ENEMY := 3  ## 전투 승리 시 생존 영혼이 적 1체당 얻는 경험치
 
 ## 거둔 영혼 목록. 각 항목: {job, name, lore, level}.

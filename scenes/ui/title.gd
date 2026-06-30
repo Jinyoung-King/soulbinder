@@ -54,12 +54,38 @@ func _ready() -> void:
 	codex.add_theme_font_size_override("font_size", 22)
 	UIKit.style_button(codex, Color(0.62, 0.55, 0.78))
 	v.add_child(codex)
+	# 승천 난이도 선택(해금 시에만)
+	if GameState.ascension_max > 0:
+		var asc := HBoxContainer.new()
+		asc.alignment = BoxContainer.ALIGNMENT_CENTER
+		asc.add_theme_constant_override("separation", 10)
+		var lbl := _label("승천  A%d" % GameState.ascension, 20, Color(0.9, 0.65, 0.45))
+		lbl.custom_minimum_size = Vector2(140, 0)
+		var minus := _ascbtn("−")
+		var plus := _ascbtn("+")
+		minus.pressed.connect(func():
+			GameState.ascension = clampi(GameState.ascension - 1, 0, GameState.ascension_max)
+			lbl.text = "승천  A%d" % GameState.ascension)
+		plus.pressed.connect(func():
+			GameState.ascension = clampi(GameState.ascension + 1, 0, GameState.ascension_max)
+			lbl.text = "승천  A%d" % GameState.ascension)
+		asc.add_child(minus); asc.add_child(lbl); asc.add_child(plus)
+		v.add_child(asc)
 	# 버전(우하단)
 	var ver := _label(GameState.VERSION, 16, Color(0.5, 0.5, 0.6))
 	ver.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_RIGHT, Control.PRESET_MODE_KEEP_SIZE)
 	ver.offset_left = -120.0; ver.offset_top = -34.0; ver.offset_right = -16.0; ver.offset_bottom = -10.0
 	ver.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	add_child(ver)
+
+func _ascbtn(text: String) -> Button:
+	var b := Button.new()
+	b.text = text
+	b.custom_minimum_size = Vector2(48, 44)
+	b.add_theme_font_override("font", FONT)
+	b.add_theme_font_size_override("font_size", 24)
+	UIKit.style_button(b, Color(0.9, 0.65, 0.45))
+	return b
 
 func _label(text: String, size: int, color: Color) -> Label:
 	var l := Label.new()
