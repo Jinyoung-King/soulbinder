@@ -5,11 +5,8 @@ extends Control
 const FONT := preload("res://assets/fonts/NotoSansKR.ttf")
 
 func _ready() -> void:
-	# 배경
-	var bg := ColorRect.new()
-	bg.color = Color(0.06, 0.05, 0.09)
-	bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	add_child(bg)
+	# 배경(분위기 그라데이션 + 비네트)
+	add_child(UIKit.backdrop(Color(0.09, 0.07, 0.14), Color(0.03, 0.03, 0.06)))
 	# 중앙 컬럼
 	var v := VBoxContainer.new()
 	v.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)

@@ -56,10 +56,7 @@ func _ready() -> void:
 	_start_battle()
 
 func _build_ui() -> void:
-	var bg := ColorRect.new()
-	bg.color = Color(0.06, 0.05, 0.09)
-	bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	add_child(bg)
+	add_child(UIKit.backdrop())  # 분위기 그라데이션 + 비네트
 
 	# 차례 배너(최상단)
 	banner = _mk_label("", 26, Color(0.85, 0.82, 0.98))
