@@ -46,6 +46,22 @@ jobs:
           ./godot --headless --export-release "Web" build/web/index.html --path .
           test -f build/web/index.wasm && echo "빌드 OK: $(ls -la build/web/index.wasm)"
 
+      - name: 옛 서비스워커 킬스위치(stuck 캐시 자동 정리)
+        run: |
+          # PWA 끄기 전 등록됐던 옛 SW가 이 경로를 update-check할 때 받아가서 자폭.
+          cat > build/web/index.service.worker.js <<'SW'
+          self.addEventListener('install', function(e){ self.skipWaiting(); });
+          self.addEventListener('activate', function(e){
+            e.waitUntil((async function(){
+              try { var ks = await caches.keys(); await Promise.all(ks.map(function(k){ return caches.delete(k); })); } catch(_){}
+              try { await self.registration.unregister(); } catch(_){}
+              var cs = await self.clients.matchAll({type:'window'});
+              cs.forEach(function(c){ try { c.navigate(c.url); } catch(_){} });
+            })());
+          });
+          SW
+          echo "killswitch SW written"
+
       - name: gh-pages 브랜치에 배포
         uses: peaceiris/actions-gh-pages@v4
         with:
