@@ -113,7 +113,7 @@ func _roster_card(idx: int) -> Control:
 
 	var header := HBoxContainer.new()
 	header.add_theme_constant_override("separation", 8)
-	header.add_child(Avatar.new().setup(e.job, d.color if picked else d.color.darkened(0.15), 34))
+	header.add_child(Avatar.new().setup(e.job, d.color if picked else d.color.darkened(0.15), 42))
 	var nm := _label("%s%s" % [e.name, ("   ▸ 출전 %d" % (order + 1)) if picked else ""], 19, Color.WHITE if picked else Color(0.82, 0.82, 0.88))
 	nm.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	header.add_child(nm)

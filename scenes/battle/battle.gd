@@ -519,7 +519,7 @@ func _lunge(c: Combatant) -> void:
 	var card: Control = card_of.get(c)
 	if card == null:
 		return
-	var dir := Vector2(0, 22 if c.is_enemy else -22)  # 적은 아래→위 아군 쪽, 아군은 위로
+	var dir := Vector2(0, 46 if c.is_enemy else -46)  # 상대 쪽으로 크게 돌진(싸우는 느낌)
 	var base := card.position
 	var tw := create_tween()
 	tw.tween_property(card, "position", base + dir, _d(0.09)).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
@@ -651,7 +651,7 @@ func _unit_card(c: Combatant, clickable: bool, onclick: Callable) -> Control:
 	var dead := not c.alive()
 	var header := HBoxContainer.new()
 	header.add_theme_constant_override("separation", 8)
-	header.add_child(Avatar.new().setup(c.job, accent, 38))
+	header.add_child(Avatar.new().setup(c.job, accent, 50))
 	var title := c.display_name + ("  Lv%d" % c.level if not c.is_enemy else "")
 	var name_l := _mk_label(title, 18, Color.WHITE if not dead else Color(0.45, 0.45, 0.5))
 	name_l.size_flags_vertical = Control.SIZE_SHRINK_CENTER
